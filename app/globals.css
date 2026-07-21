@@ -1,0 +1,3587 @@
+/* =========================================================================
+   Noisette Patissier
+
+   Three products share this file and share the brand, but nothing else:
+
+     .site   the website at /. Wide, editorial, serif, unhurried. Its job is to
+             introduce the bakery to someone who has never been.
+     .app    the ordering tool at /order. Narrow, dense, sans, sticky chrome.
+             Its job is to get a known customer to a pickup code.
+     .admin  the counter at /admin. Tabular, tablet-sized, no serif and no
+             photography at all. Its job is to count what the other two did.
+
+   Tokens and a small set of primitives are shared. Layout is not. If you find
+   yourself reaching for a .site- rule inside the app, that is the signal that
+   something is being introduced twice.
+
+   --serif and --sans come from next/font in app/layout.js, so they are not
+   declared here.
+   ========================================================================= */
+
+/* ---------------------------------------------------------------- tokens -- */
+:root {
+  --cream: #f8f2e6;
+  --cream2: #efe6d2;
+  --espresso: #2a1b10;
+  --espresso2: #5c4a38;
+  --caramel: #9a4b0f;
+  --gold: #c98b2d;
+  --faint: #8a765e;
+  --line: #e6dac3;
+  --surface: #fffdf7;
+  --muted: #6b5947;
+  --muted2: #cdbfa4;
+  --overlay: rgba(28, 18, 10, 0.5);
+  --shadow: rgba(42, 27, 16, 0.08);
+  --ph-stripe: #e6dac3;
+
+  /* always-dark surface, used by the payment screen in both themes */
+  --ink: #1c120a;
+  --ink-fg: #f8f2e6;
+  --ink-fg2: #cdbfa4;
+  --ink-accent: #c98b2d;
+
+  --focus: var(--caramel);
+  --tap: 44px;
+
+  --site-max: 1280px;
+  --app-max: 1040px;
+  --form-max: 460px;
+  --admin-max: 1180px;
+
+  /* back-of-house semantics, deliberately outside the warm brand ramp */
+  --ok: #3d6b4a;
+  --ok-bg: #e6f1ea;
+  --hot: #a63a1c;
+  --hot-bg: #fbe9e2;
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 18px;
+
+  /* app bar height, so the date rail knows where to stick */
+  --bar-h: calc(61px + env(safe-area-inset-top, 0px));
+
+  color-scheme: light;
+
+  /* One dark palette, referenced by both the explicit toggle and the OS default
+     below. Declared here so neither reference can miss it. */
+  --dark-cream: #181008;
+  --dark-cream2: #2b2013;
+  --dark-espresso: #f2e8d5;
+  --dark-espresso2: #cdbb9f;
+  --dark-caramel: #e09242;
+  --dark-gold: #dba352;
+  --dark-faint: #98876d;
+  --dark-line: #3b2d1c;
+  --dark-surface: #221810;
+  --dark-muted: #b5a388;
+  --dark-muted2: #55422b;
+  --dark-overlay: rgba(0, 0, 0, 0.66);
+  --dark-shadow: rgba(0, 0, 0, 0.45);
+  --dark-ph: #3b2d1c;
+  --dark-ok: #8fc0a1;
+  --dark-ok-bg: #223529;
+  --dark-hot: #e27e57;
+  --dark-hot-bg: #442619;
+  --dark-ink: #0f0903;
+}
+
+:root[data-theme="dark"] {
+  --cream: var(--dark-cream);
+  --cream2: var(--dark-cream2);
+  --espresso: var(--dark-espresso);
+  --espresso2: var(--dark-espresso2);
+  --caramel: var(--dark-caramel);
+  --gold: var(--dark-gold);
+  --faint: var(--dark-faint);
+  --line: var(--dark-line);
+  --surface: var(--dark-surface);
+  --muted: var(--dark-muted);
+  --muted2: var(--dark-muted2);
+  --overlay: var(--dark-overlay);
+  --shadow: var(--dark-shadow);
+  --ph-stripe: var(--dark-ph);
+  --ok: var(--dark-ok);
+  --ok-bg: var(--dark-ok-bg);
+  --hot: var(--dark-hot);
+  --hot-bg: var(--dark-hot-bg);
+  --ink: var(--dark-ink);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --cream: var(--dark-cream);
+    --cream2: var(--dark-cream2);
+    --espresso: var(--dark-espresso);
+    --espresso2: var(--dark-espresso2);
+    --caramel: var(--dark-caramel);
+    --gold: var(--dark-gold);
+    --faint: var(--dark-faint);
+    --line: var(--dark-line);
+    --surface: var(--dark-surface);
+    --muted: var(--dark-muted);
+    --muted2: var(--dark-muted2);
+    --overlay: var(--dark-overlay);
+    --shadow: var(--dark-shadow);
+    --ph-stripe: var(--dark-ph);
+    --ok: var(--dark-ok);
+    --ok-bg: var(--dark-ok-bg);
+    --hot: var(--dark-hot);
+    --hot-bg: var(--dark-hot-bg);
+    --ink: var(--dark-ink);
+    color-scheme: dark;
+  }
+}
+
+/* ------------------------------------------------------------ base/reset -- */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--cream);
+  color: var(--espresso);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+img,
+svg,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -60px;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  background: var(--espresso);
+  color: var(--cream);
+  padding: 10px 16px;
+  font-size: 13px;
+  text-decoration: none;
+  border-radius: 0 0 var(--r-sm) var(--r-sm);
+  transition: top 0.15s ease-out;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ------------------------------------------------------------ primitives -- */
+.serif {
+  font-family: var(--serif);
+}
+.italic {
+  font-style: italic;
+}
+.caramel {
+  color: var(--caramel);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  font-weight: 600;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  font-size: 15px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.brand-sm {
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+}
+
+/* The v2 lockup: wordmark over a small gold strapline. */
+.brand-stack {
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  letter-spacing: normal;
+  text-indent: 0;
+}
+.brand-word {
+  font-weight: 600;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+}
+.brand-sub {
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.34em;
+  text-indent: 0.34em;
+  text-transform: uppercase;
+  color: var(--caramel);
+}
+
+.accent-em {
+  font-style: italic;
+  color: var(--caramel);
+}
+
+.micro {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--espresso2);
+}
+
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--caramel);
+  margin-bottom: 12px;
+}
+
+/* Neutral by default, which is what the app wants. The site re-voices it below. */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 54px;
+  padding: 14px 20px;
+  background: var(--espresso);
+  color: var(--cream);
+  font-weight: 500;
+  font-size: 15px;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 27px;
+  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+}
+.btn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+.btn:disabled {
+  opacity: 0.4;
+}
+.btn.ghost {
+  background: transparent;
+  color: var(--espresso);
+  border: 1px solid var(--muted2);
+}
+.btn-sm {
+  width: auto;
+  min-height: var(--tap);
+  padding: 9px 18px;
+  font-size: 13px;
+  border-radius: 24px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: var(--tap);
+  height: var(--tap);
+  flex: 0 0 auto;
+  color: var(--espresso);
+  border-radius: var(--r-sm);
+  text-decoration: none;
+  transition: background 0.15s ease-out;
+}
+.iconbtn:hover:not(:disabled) {
+  background: var(--cream2);
+}
+
+.bagcount {
+  position: absolute;
+  top: 4px;
+  right: 3px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--caramel);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 17px;
+  text-align: center;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--caramel);
+}
+.tag-out,
+.tag-quiet {
+  color: var(--muted);
+}
+
+/* A photo slot. The stripe shows through until the image decodes, and stays
+   visible for good in the fallback case where there is no photo at all. */
+.frame {
+  position: relative;
+  background: repeating-linear-gradient(115deg, var(--cream2) 0 14px, var(--ph-stripe) 14px 28px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.frame-img {
+  object-fit: cover;
+}
+.frame-monogram {
+  font-family: var(--serif);
+  font-size: 44px;
+  font-weight: 600;
+  color: var(--muted2);
+  user-select: none;
+}
+.frame-glyph {
+  color: var(--muted2);
+}
+
+.err {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--cream2);
+  border-left: 3px solid var(--caramel);
+  color: var(--espresso);
+  font-size: 13.5px;
+  line-height: 1.5;
+  padding: 11px 14px;
+  margin-bottom: 16px;
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+.err .icon {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--caramel);
+}
+
+.help {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 7px;
+}
+
+/* =========================================================================
+   THE WEBSITE
+   ========================================================================= */
+.site {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.site .btn {
+  border-radius: 27px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  text-indent: 0.18em;
+  font-size: 12.5px;
+  padding: 16px 32px;
+}
+.site .btn-sm {
+  border-radius: 24px;
+  padding: 12px 24px;
+  font-size: 11px;
+}
+
+.site-header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+}
+.site-address {
+  display: none;
+}
+.site-nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.site-nav > a:not(.btn) {
+  display: none;
+}
+
+.site-hero {
+  display: flex;
+  flex-direction: column-reverse;
+}
+.site-hero-visual {
+  position: relative;
+  display: flex;
+}
+.site-hero-photo {
+  flex: 1;
+  height: 340px;
+}
+.site-hero-copy {
+  padding: 38px 22px 34px;
+}
+.site-hero-copy h1 {
+  font-size: clamp(38px, 11vw, 68px);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+}
+.lede {
+  font-size: 16.5px;
+  line-height: 1.7;
+  font-weight: 300;
+  color: var(--espresso2);
+  max-width: 44ch;
+  margin: 20px 0 28px;
+}
+.site-hero-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.site-hero-cta {
+  width: auto;
+}
+.site-hours {
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+/* Today's allocation, floated over the hero photo. Always a dark backdrop, so
+   the colors are the deep-surface set in both themes. */
+.site-hero-stock {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  background: rgba(28, 18, 10, 0.82);
+  color: #f8f2e6;
+  border-radius: 14px;
+  padding: 14px 18px;
+  backdrop-filter: blur(4px);
+}
+.site-hero-stock-label {
+  margin-bottom: 8px;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #c98b2d;
+}
+.site-hero-stock-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 230px;
+}
+.site-hero-stock-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  align-items: baseline;
+  font-size: 12.5px;
+}
+.site-hero-stock-left {
+  font-variant-numeric: tabular-nums;
+  color: #d8cbb4;
+}
+.site-hero-stock-left.is-low {
+  color: #e8a04c;
+}
+.site-hero-stock-track {
+  grid-column: 1 / -1;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(248, 242, 230, 0.18);
+  overflow: hidden;
+}
+.site-hero-stock-bar {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: #c98b2d;
+}
+.site-hero-stock-bar.is-critical {
+  background: #a63a1c;
+}
+
+.ticker {
+  background: var(--ink);
+  color: var(--ink-fg);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  padding: 12px 16px;
+  text-align: center;
+}
+.ticker b {
+  color: var(--ink-accent);
+  font-weight: 500;
+}
+
+.site .section {
+  padding: 64px 22px;
+}
+.site .section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 36px;
+  border-bottom: 3px double var(--line);
+  padding-bottom: 22px;
+}
+.site .section-head h2 {
+  font-size: clamp(28px, 7vw, 44px);
+  font-weight: 600;
+  line-height: 1.08;
+}
+.section-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  gap: 7px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--caramel);
+  text-decoration: none;
+}
+.section-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* Showcase: big pictures and prose. This is a menu to read, not to click through. */
+.showcase {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 42px 30px;
+}
+.showcase-link {
+  display: block;
+  text-decoration: none;
+}
+.showcase-photowrap {
+  position: relative;
+  margin-bottom: 16px;
+}
+.showcase-photo {
+  height: 300px;
+  border-radius: 14px;
+}
+.showcase-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 6px 13px;
+  background: var(--ink);
+  color: var(--ink-accent);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border-radius: 16px;
+}
+.showcase-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.showcase-row h3 {
+  font-size: 23px;
+  font-weight: 600;
+}
+.showcase-price {
+  font-size: 14px;
+  color: var(--espresso2);
+  font-variant-numeric: tabular-nums;
+}
+.showcase-desc {
+  font-size: 14px;
+  line-height: 1.65;
+  font-weight: 300;
+  color: var(--espresso2);
+  margin-top: 8px;
+  max-width: 44ch;
+}
+.showcase-rating {
+  margin-top: 7px;
+  font-size: 12px;
+  color: var(--caramel);
+}
+.showcase-link .tag {
+  margin-top: 10px;
+}
+.showcase-link:hover .frame {
+  opacity: 0.9;
+}
+
+.split {
+  display: flex;
+  flex-direction: column;
+  scroll-margin-top: 16px;
+}
+.split-photo {
+  height: 280px;
+}
+.split-copy {
+  padding: 44px 22px;
+}
+.split-copy h2 {
+  font-size: clamp(26px, 7vw, 36px);
+  font-weight: 600;
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+.split-copy p {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--espresso2);
+  font-weight: 300;
+  max-width: 46ch;
+  margin-bottom: 14px;
+}
+.split-copy .quiet {
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* Notre histoire sits on the always-dark surface in v2. */
+.split-deep {
+  background: var(--ink);
+  color: var(--ink-fg);
+}
+.split-deep .eyebrow {
+  color: var(--ink-accent);
+}
+.split-deep .split-copy p {
+  color: var(--ink-fg2);
+}
+.split-deep .split-copy .quiet {
+  color: var(--ink-accent);
+  font-size: 20px;
+  font-style: italic;
+  margin-bottom: 0;
+}
+.split-deep .split-photo {
+  background: repeating-linear-gradient(115deg, #2a1b10 0 14px, #241812 14px 28px);
+}
+
+.hours {
+  font-size: 14.5px;
+  margin-bottom: 22px;
+}
+.hours dt {
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-top: 14px;
+}
+.hours dd {
+  color: var(--espresso2);
+  font-weight: 300;
+  margin-top: 2px;
+}
+.hours dd a {
+  color: var(--caramel);
+}
+.site-maplink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: var(--tap);
+  color: var(--caramel);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+}
+.site-maplink:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 26px;
+  margin-top: 8px;
+}
+.step {
+  border-top: 3px double var(--line);
+  padding-top: 20px;
+}
+.step-num {
+  display: block;
+  font-size: 34px;
+  font-style: italic;
+  color: var(--caramel);
+  margin-bottom: 10px;
+}
+.step-title {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.step-desc {
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.65;
+  color: var(--espresso2);
+  max-width: 42ch;
+}
+
+.site-footer {
+  margin-top: auto;
+  background: var(--ink);
+  color: var(--ink-fg);
+  padding: 34px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
+}
+.site-footer .brand {
+  font-size: 14px;
+}
+.site-footer .brand-sub {
+  font-size: 8.5px;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  color: var(--ink-accent);
+}
+.site-footer-links {
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.site-footer-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--ink-fg2);
+  text-decoration: none;
+}
+.site-footer-links a:hover {
+  color: var(--ink-fg);
+}
+.site-copyright {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--ink-fg2);
+  opacity: 0.7;
+}
+
+/* =========================================================================
+   THE ORDERING APP
+   ========================================================================= */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--cream);
+}
+.app-loading {
+  align-items: center;
+  justify-content: center;
+}
+
+/* Sticky chrome is the app's tell. The website never does this. */
+.app-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--cream);
+  border-bottom: 1px solid var(--line);
+  padding-top: max(8px, env(safe-area-inset-top));
+}
+.app-bar .brand {
+  padding-left: 8px;
+}
+.app-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.app-bar-spacer {
+  width: var(--tap);
+}
+.app-step {
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--caramel);
+}
+
+/* v2 stacks the brand row and the date rail inside one sticky header. */
+.app-bar-stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 6px 0 0;
+}
+.app-bar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 12px;
+}
+.app-brand {
+  gap: 8px;
+}
+.app-brand-tag {
+  font-size: 9.5px;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  text-indent: 0;
+  text-transform: uppercase;
+  color: var(--caramel);
+}
+
+.iconbtn .dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--caramel);
+}
+
+.app-dates {
+  padding: 2px 0 12px;
+}
+.app-dates-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 16px 8px;
+}
+.app-dates-label {
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--caramel);
+}
+.app-dates-note {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.daterail {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.daterail::-webkit-scrollbar {
+  display: none;
+}
+.daychip {
+  flex: 0 0 auto;
+  min-width: 60px;
+  min-height: 52px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: 16px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--espresso);
+  transition: background 0.15s ease-out, border-color 0.15s ease-out;
+}
+.daychip small {
+  display: block;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  color: var(--faint);
+  margin-bottom: 1px;
+}
+.daychip.on {
+  background: var(--espresso);
+  border-color: var(--espresso);
+  color: var(--cream);
+}
+.daychip.on small {
+  color: var(--gold);
+}
+
+.app-main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--app-max);
+  margin: 0 auto;
+  padding-bottom: 110px;
+}
+
+/* One-tap reorder for signed-in regulars, at the top of the catalog. */
+.reorder {
+  margin: 14px 16px 0;
+  border: 3px double var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  padding: 13px 14px;
+}
+.reorder-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.reorder-label {
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--caramel);
+}
+.reorder-when {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.reorder-items {
+  margin: 7px 0 10px;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+.reorder-total {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.reorder-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap);
+  padding: 10px 18px;
+  background: var(--espresso);
+  color: var(--cream);
+  font-weight: 500;
+  font-size: 13.5px;
+  border-radius: 22px;
+  transition: opacity 0.15s ease-out;
+}
+.reorder-btn:hover {
+  opacity: 0.9;
+}
+
+.cats {
+  display: flex;
+  gap: 7px;
+  padding: 14px 16px 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cats::-webkit-scrollbar {
+  display: none;
+}
+.cat {
+  flex: 0 0 auto;
+  min-height: var(--tap);
+  padding: 8px 16px;
+  border: 1px solid var(--muted2);
+  border-radius: 22px;
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  transition: background 0.15s ease-out;
+}
+.cat.on {
+  background: var(--espresso);
+  border-color: var(--espresso);
+  color: var(--cream);
+  font-weight: 500;
+}
+
+/* Compact, bordered, stock-forward. Nothing like the website's showcase. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  padding: 8px 16px;
+}
+.card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.15s ease-out;
+}
+.card:hover {
+  border-color: var(--muted2);
+}
+.card-open {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0;
+}
+.card-photowrap {
+  display: block;
+  position: relative;
+}
+.card-photo {
+  height: 136px;
+}
+.card-out {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(248, 242, 230, 0.55);
+}
+:root[data-theme="dark"] .card-out {
+  background: rgba(24, 16, 8, 0.55);
+}
+.card-out-pill {
+  padding: 6px 14px;
+  background: var(--espresso);
+  color: var(--cream);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  border-radius: 16px;
+}
+.card.soldout {
+  opacity: 0.72;
+}
+.card.soldout .frame-img {
+  filter: grayscale(0.7);
+}
+.card-row {
+  display: block;
+  padding: 11px 12px 4px;
+}
+.card-name {
+  display: block;
+  font-size: 17.5px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.card-sub {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 3px;
+}
+.card-price {
+  font-size: 13.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.card-rating {
+  font-size: 11px;
+  color: var(--caramel);
+  white-space: nowrap;
+}
+.card-foot {
+  padding: 6px 12px 12px;
+}
+
+/* The stock meter: a thin bar of what is left of today's bake. */
+.meter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+.meter-track {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--cream2);
+  overflow: hidden;
+}
+.meter-bar {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--gold);
+}
+.meter-bar.is-low {
+  background: var(--hot);
+}
+.meter-bar.is-out {
+  background: var(--muted2);
+}
+.meter-tag {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.meter-tag.is-low {
+  color: var(--hot);
+}
+.meter-tag.is-out {
+  color: var(--faint);
+}
+.meter-lg {
+  margin: 14px 0;
+}
+.meter-lg .meter-track {
+  height: 5px;
+  border-radius: 3px;
+}
+.meter-lg .meter-tag {
+  font-size: 11px;
+}
+
+.card-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  min-height: var(--tap);
+  border: 1px solid var(--espresso);
+  border-radius: 22px;
+  color: var(--espresso);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s ease-out, color 0.15s ease-out;
+}
+.card-add:hover {
+  background: var(--espresso);
+  color: var(--cream);
+}
+.card-step {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--espresso);
+  border-radius: 22px;
+  background: var(--espresso);
+  color: var(--cream);
+}
+.card-step button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap);
+  min-height: var(--tap);
+  color: var(--cream);
+}
+.card-step button:disabled {
+  opacity: 0.35;
+}
+.card-step > span {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+}
+.card-notify {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--tap);
+  border: 1px dashed var(--muted2);
+  border-radius: 22px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.app-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 12;
+  padding: 12px 16px 16px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--cream) 66%, transparent);
+}
+.dockbtn {
+  max-width: var(--app-max);
+  margin: 0 auto;
+  justify-content: space-between;
+  padding: 14px 22px;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 8px 26px var(--shadow);
+}
+.dockbtn-sum {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.dockbtn-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 11px;
+  background: var(--gold);
+  color: var(--espresso);
+  font-size: 12px;
+  font-weight: 600;
+}
+.dockbtn-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.product {
+  flex: 1;
+  width: 100%;
+  max-width: var(--app-max);
+  margin: 0 auto;
+}
+.product-photo {
+  height: 300px;
+}
+.product-copy {
+  padding: 20px 20px 40px;
+  max-width: 620px;
+}
+.product-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--caramel);
+}
+.product-kicker-star {
+  color: var(--gold);
+}
+.product-name {
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.1;
+  margin: 8px 0 4px;
+}
+.product-priceline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.product-price {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.product-rating {
+  font-size: 12.5px;
+  color: var(--caramel);
+}
+.desc {
+  font-size: 15px;
+  line-height: 1.7;
+  font-weight: 300;
+  color: var(--muted);
+  margin: 0 0 10px;
+  max-width: 50ch;
+}
+.allerg {
+  font-size: 12.5px;
+  color: var(--faint);
+  margin-bottom: 18px;
+}
+
+.pairs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 13px 0;
+  border-top: 3px double var(--line);
+  border-bottom: 3px double var(--line);
+  text-align: left;
+}
+.pairs span {
+  display: block;
+}
+.pairs-kicker {
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--caramel);
+}
+.pairs-name {
+  font-size: 17px;
+  font-weight: 600;
+  margin-top: 3px;
+}
+.pairs:disabled {
+  opacity: 0.4;
+}
+
+.addrow {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  margin-top: 20px;
+}
+.addrow .btn {
+  flex: 1;
+}
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--muted2);
+  border-radius: 27px;
+  flex: 0 0 auto;
+}
+.stepper button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  min-height: 54px;
+  color: var(--espresso);
+}
+.stepper button:disabled {
+  opacity: 0.3;
+}
+.stepper-val {
+  min-width: 28px;
+  text-align: center;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.stepper-sm {
+  border-radius: 19px;
+}
+.stepper-sm button {
+  width: 30px;
+  min-height: 30px;
+}
+.stepper-sm .stepper-val {
+  min-width: 20px;
+  font-size: 13px;
+}
+
+/* ---- gift-box picker, in the bag sheet ---- */
+.giftpicker {
+  margin-top: 14px;
+  padding: 12px;
+  background: var(--cream2);
+  border-radius: var(--r-md);
+}
+.giftpicker-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.giftpicker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.giftpicker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.giftpicker-name {
+  font-size: 13.5px;
+}
+.giftpicker-clear {
+  padding: 0;
+  min-height: auto;
+}
+
+.app-form {
+  flex: 1;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 22px 20px 44px;
+}
+.q {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.1;
+  margin-bottom: 16px;
+}
+
+.ck-sec {
+  margin-bottom: 24px;
+}
+.ck-label {
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--caramel);
+  margin-bottom: 10px;
+}
+
+.slots {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 9px;
+}
+.slot {
+  width: 100%;
+  min-height: 54px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--espresso);
+  transition: background 0.15s ease-out, border-color 0.15s ease-out;
+}
+.slot.on {
+  background: var(--espresso);
+  border-color: var(--espresso);
+  color: var(--cream);
+}
+.slot:disabled {
+  color: var(--faint);
+  background: var(--cream2);
+  opacity: 0.6;
+}
+.slot small {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hot);
+  margin-top: 3px;
+}
+.slot.on small {
+  color: var(--gold);
+}
+.slot:disabled small {
+  color: var(--faint);
+}
+
+.sum {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--surface);
+  border: 3px double var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  margin-bottom: 22px;
+}
+.sum .sum-count {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.field {
+  margin-bottom: 12px;
+}
+.field label:not(.sr-only) {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--espresso2);
+  margin-bottom: 7px;
+}
+.field input {
+  width: 100%;
+  min-height: 50px;
+  border: 1px solid var(--muted2);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--espresso);
+  font-family: var(--sans);
+  font-size: 16px; /* 16px or iOS zooms the page on focus */
+  padding: 13px 15px;
+  outline: none;
+}
+.field input:focus-visible {
+  border-color: var(--espresso);
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.payset {
+  border: none;
+  margin-bottom: 26px;
+}
+.paygrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 9px;
+}
+.pay {
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--espresso);
+  font-size: 13.5px;
+  transition: background 0.15s ease-out, border-color 0.15s ease-out;
+}
+.pay.on {
+  background: var(--espresso);
+  border-color: var(--espresso);
+  color: var(--cream);
+}
+.note {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--faint);
+  margin-top: 12px;
+}
+
+/* Payment screen: always dark, in both themes. The code is the only thing here. */
+.app-focus {
+  background: var(--ink);
+  color: var(--ink-fg);
+}
+.app-focus .app-bar {
+  background: var(--ink);
+  border-bottom-color: transparent;
+}
+.app-focus .iconbtn {
+  color: var(--ink-fg);
+}
+.app-focus .iconbtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.qwrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 26px 24px 44px;
+  max-width: var(--form-max);
+  margin: 0 auto;
+}
+.qtitle {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+.qr {
+  background: #fff;
+  padding: 16px;
+  border-radius: 14px;
+  line-height: 0;
+}
+.qamount {
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  margin-top: 20px;
+}
+.qinv {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--ink-fg2);
+  margin-top: 2px;
+}
+.qtimer {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--ink-accent);
+  font-variant-numeric: tabular-nums;
+  margin-top: 12px;
+  border: 1px solid rgba(201, 139, 45, 0.4);
+  border-radius: 18px;
+  padding: 7px 14px;
+}
+.qdemo {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-fg2);
+  opacity: 0.6;
+  margin-top: 28px;
+}
+.app-focus .linkbtn {
+  color: var(--ink-fg);
+}
+
+.linkbtn {
+  min-height: var(--tap);
+  padding: 12px;
+  font-size: 13.5px;
+  color: var(--espresso2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.done {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 44px 24px;
+  max-width: var(--form-max);
+  margin: 0 auto;
+}
+.done-eyebrow {
+  font-size: 10.5px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--caramel);
+  margin-bottom: 10px;
+}
+.done h1 {
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+.done-sub {
+  color: var(--muted);
+  font-weight: 300;
+  margin-top: 8px;
+}
+.pass {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 3px double var(--line);
+  border-radius: 16px;
+  padding: 22px 26px;
+  box-shadow: 0 14px 34px var(--shadow);
+  margin: 26px 0 16px;
+}
+.pass-label {
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--caramel);
+}
+.ordno {
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+}
+.done-help {
+  justify-content: center;
+  color: var(--faint);
+  margin-bottom: 8px;
+}
+.done-cal {
+  max-width: 300px;
+  min-height: 48px;
+  font-size: 14px;
+  border-radius: 24px;
+  margin-top: 16px;
+}
+
+/* ------------------------------------------------------------ bag sheet -- */
+.sheetdim {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  width: 100%;
+  background: var(--overlay);
+  cursor: default;
+  animation: fade 0.18s ease-out;
+}
+.sheet {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  z-index: 21;
+  width: 100%;
+  max-width: 520px;
+  max-height: 88dvh;
+  overflow-y: auto;
+  background: var(--cream);
+  border-radius: 20px 20px 0 0;
+  padding: 16px 20px 24px;
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+  animation: rise 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.sheet-head h2 {
+  font-size: 26px;
+  font-weight: 600;
+}
+.sheet-date {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.sheet-date b {
+  color: var(--caramel);
+  font-weight: 500;
+}
+.sheet-empty {
+  text-align: center;
+  color: var(--faint);
+  font-weight: 300;
+  padding: 26px 0 30px;
+}
+.bag-list:not(:empty) {
+  margin-bottom: 4px;
+}
+.bag-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+.bag-photo {
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+}
+.bag-photo .frame-monogram {
+  font-size: 20px;
+}
+.bag-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14.5px;
+  line-height: 1.35;
+}
+.bag-name small {
+  display: block;
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.bag-step {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--muted2);
+  border-radius: 19px;
+  flex: 0 0 auto;
+}
+.bag-step button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  min-height: 38px;
+  color: var(--espresso);
+}
+.bag-step button:disabled {
+  opacity: 0.35;
+}
+.bag-step > span {
+  min-width: 20px;
+  text-align: center;
+  font-weight: 500;
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+}
+.warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--cream2);
+  border-left: 3px solid var(--caramel);
+  font-size: 12.5px;
+  line-height: 1.5;
+  padding: 11px 13px;
+  margin-bottom: 12px;
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+.warn .icon {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--caramel);
+}
+.gift {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--tap);
+  padding: 12px 0 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.gift input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--caramel);
+  cursor: pointer;
+}
+.gift span:first-of-type {
+  flex: 1;
+}
+.bag-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0 16px;
+  margin-top: 6px;
+  font-size: 16.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  border-top: 3px double var(--line);
+}
+
+/* ---- account panel ---- */
+.acct-lede {
+  font-size: 14px;
+  line-height: 1.6;
+  font-weight: 300;
+  color: var(--espresso2);
+  margin-bottom: 18px;
+  max-width: 42ch;
+}
+.acct-id {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  background: var(--cream2);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  margin-bottom: 22px;
+}
+.acct-name {
+  font-size: 17px;
+  font-weight: 500;
+}
+.acct-wa {
+  font-size: 13.5px;
+  color: var(--espresso2);
+  font-variant-numeric: tabular-nums;
+}
+.acct-h3 {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--espresso2);
+  margin-bottom: 12px;
+}
+.acct-orders {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+.acct-order {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+}
+.acct-order-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.acct-order-date {
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.acct-order-items {
+  font-size: 13px;
+  color: var(--espresso2);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+.acct-order-foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.done-help.claimed {
+  color: var(--caramel);
+}
+.acct-cakes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+.acct-cake {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+}
+.acct-cake-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.acct-cake-date {
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.acct-cake-brief {
+  font-size: 13px;
+  color: var(--espresso2);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+.acct-cake-price {
+  font-size: 13px;
+  color: var(--caramel);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 8px;
+}
+.acct-cancel-link {
+  padding: 8px 0 0;
+  min-height: auto;
+}
+.acct-cancel-confirm {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes rise {
+  from {
+    transform: translate(-50%, 100%);
+  }
+}
+
+/* =========================================================================
+   THE COUNTER (back of house)
+
+   No serif, no photography, tabular numerals throughout. If this ever starts
+   looking like the website, something has gone wrong.
+   ========================================================================= */
+.admin {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--cream2);
+}
+.admin-loading {
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 14px;
+  padding-top: max(6px, env(safe-area-inset-top));
+  background: var(--ink);
+  color: var(--ink-fg);
+}
+.admin-bar .iconbtn {
+  color: var(--ink-fg);
+}
+.admin-bar .iconbtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+.admin-bar-id {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.admin-tagname {
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-accent);
+  border-left: 1px solid rgba(255, 255, 255, 0.22);
+  padding-left: 12px;
+}
+.admin-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.admin-bar-clock {
+  font-size: 12px;
+  color: var(--ink-fg2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.admin-bar-staff {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-accent);
+  white-space: nowrap;
+}
+.admin-staff-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ok);
+}
+
+.admin-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--hot-bg);
+  color: var(--hot);
+  font-size: 12.5px;
+  line-height: 1.5;
+  padding: 10px 16px;
+}
+.admin-warn .icon {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.admin-dates {
+  background: var(--cream);
+  border-bottom: 1px solid var(--line);
+  padding: 12px 0 10px;
+}
+.admin-dates .micro {
+  padding: 0 16px 8px;
+}
+
+.admin-main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--admin-max);
+  margin: 0 auto;
+  padding: 16px 16px 60px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.stat {
+  background: var(--surface);
+  padding: 13px 15px;
+}
+.stat dt {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 5px;
+}
+.stat dd {
+  font-size: 22px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.stat dd small {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--faint);
+  margin-left: 5px;
+}
+.stat dd.hot {
+  color: var(--hot);
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 18px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+.tab {
+  flex: 0 0 auto;
+  min-height: var(--tap);
+  padding: 9px 18px;
+  font-size: 13px;
+  color: var(--muted);
+  border: 1px solid var(--muted2);
+  border-radius: 22px;
+  white-space: nowrap;
+  transition: background 0.15s ease-out;
+}
+.tab.on {
+  color: var(--cream);
+  background: var(--espresso);
+  border-color: var(--espresso);
+  font-weight: 500;
+}
+
+.tabs-sm {
+  margin-bottom: 12px;
+}
+.tabs-sm .tab {
+  min-height: auto;
+  padding: 7px 14px;
+  font-size: 12.5px;
+}
+.approw-status {
+  color: var(--muted);
+  align-self: center;
+}
+
+.admin-hint {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-bottom: 14px;
+  max-width: 60ch;
+}
+.admin-empty {
+  background: var(--surface);
+  border: 1px dashed var(--muted2);
+  border-radius: 14px;
+  padding: 34px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ---- fulfillment tickets ---- */
+.tickets {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.ticket {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+}
+.ticket.stage-collected {
+  opacity: 0.55;
+}
+.ticket-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.ticket-who {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.ticket-who small {
+  display: block;
+  font-weight: 400;
+  letter-spacing: normal;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  margin-top: 1px;
+}
+.ticket-items {
+  border-top: 3px double var(--line);
+  padding-top: 9px;
+  margin-bottom: 10px;
+}
+.ticket-items li {
+  font-size: 14px;
+  padding: 2px 0;
+}
+.ticket-items b {
+  display: inline-block;
+  min-width: 24px;
+  font-variant-numeric: tabular-nums;
+}
+.ticket-wrap {
+  color: var(--caramel);
+  font-size: 12.5px;
+}
+.ticket-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 11px;
+}
+.ticket-total {
+  font-weight: 500;
+  color: var(--espresso);
+}
+/* Oversized on purpose: this gets hit with flour on your hands. */
+.ticket-go {
+  min-height: 52px;
+  margin-top: auto;
+  border-radius: 26px;
+  font-size: 14.5px;
+}
+.ticket-go-ready {
+  background: var(--ok);
+  color: #f8f2e6;
+}
+
+/* Fulfillment groups: one slot, one serif heading. */
+.slotgroup {
+  margin-bottom: 22px;
+}
+.slotgroup-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.slotgroup-h {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 22px;
+  font-weight: 600;
+}
+.slotgroup-h.now {
+  color: var(--caramel);
+}
+.nowpill {
+  padding: 4px 12px;
+  background: var(--caramel);
+  color: var(--cream);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border-radius: 14px;
+  white-space: nowrap;
+}
+.slotgroup-count {
+  font-size: 12px;
+  color: var(--faint);
+}
+.ticket-done {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 52px;
+  margin-top: auto;
+  color: var(--ok);
+  font-size: 13.5px;
+}
+.ticket-btnrow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: auto;
+}
+.ticket-btnrow .ticket-go {
+  margin-top: 0;
+}
+.ticket-cancel-link {
+  align-self: center;
+  padding: 6px;
+  min-height: auto;
+  font-size: 12.5px;
+}
+.ticket-cancel-confirm {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.pill-paid {
+  background: var(--hot-bg);
+  color: var(--hot);
+}
+.pill-preparing {
+  background: var(--cream2);
+  color: var(--caramel);
+}
+.pill-ready {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+.pill-collected {
+  background: var(--cream2);
+  color: var(--muted);
+}
+.pill-out {
+  background: var(--hot-bg);
+  color: var(--hot);
+}
+.pill-cancelled {
+  background: var(--hot-bg);
+  color: var(--hot);
+}
+
+/* ---- inventory table ---- */
+.tablewrap {
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.dtable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.dtable th,
+.dtable td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.dtable thead th {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  /* espresso2, not faint: this must clear 4.5:1 on the --cream fill. */
+  color: var(--espresso2);
+  font-weight: 500;
+  background: var(--cream);
+  position: sticky;
+  top: 0;
+}
+.dtable tbody th {
+  font-weight: 500;
+  white-space: normal;
+  min-width: 160px;
+}
+.dtable tbody th small {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.dtable tbody tr:last-child th,
+.dtable tbody tr:last-child td {
+  border-bottom: none;
+}
+.dtable .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.dtable .quiet {
+  color: var(--muted);
+}
+.dtable .row-out th {
+  color: var(--muted);
+}
+.dtable .delta-neg {
+  color: var(--hot);
+}
+.dtable .delta-pos {
+  color: var(--ok);
+}
+
+.numin {
+  width: 68px;
+  min-height: var(--tap);
+  padding: 6px 8px;
+  text-align: right;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--cream);
+  color: var(--espresso);
+  font-family: var(--sans);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.numin:focus-visible {
+  border-color: var(--espresso);
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.numin:disabled {
+  opacity: 0.5;
+}
+
+/* ---- slot capacity ---- */
+.slotrows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.slotrow {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "time load input"
+    "bar  bar  input";
+  align-items: center;
+  gap: 6px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+.slotrow-time {
+  grid-area: time;
+  font-size: 15px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.slotrow-load {
+  grid-area: load;
+  font-size: 12.5px;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+.slotrow-load.full {
+  color: var(--hot);
+  font-weight: 600;
+}
+.slotrow .numin {
+  grid-area: input;
+}
+.slotbar {
+  grid-area: bar;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--cream2);
+  overflow: hidden;
+}
+.slotbar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--gold);
+  transition: width 0.2s ease-out;
+}
+.slotbar-fill.full {
+  background: var(--hot);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- wholesale review, inside the counter ---- */
+.admin-h3 {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 21px;
+  font-weight: 600;
+  color: var(--caramel);
+  margin: 26px 0 10px;
+}
+.applist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.approw {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 15px 17px;
+}
+.approw-app {
+  border-left: 4px solid var(--caramel);
+}
+.approw-who {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.approw-who small {
+  display: block;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.approw-btns {
+  display: flex;
+  gap: 8px;
+}
+
+/* =========================================================================
+   THE WHOLESALE PORTAL
+
+   The fourth surface. A planning tool for cafe owners: the app's chrome, the
+   counter's tables, nobody being sold anything. No photography, because a
+   buyer ordering 240 croissants a week has already tasted one.
+   ========================================================================= */
+.ws {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--cream);
+}
+.ws-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 16px;
+  padding-top: max(6px, env(safe-area-inset-top));
+  background: var(--cream);
+  border-bottom: 1px solid var(--line);
+}
+.ws-bar-id {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.ws-tagname {
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--caramel);
+  border-left: 1px solid var(--muted2);
+  padding-left: 12px;
+}
+.ws-main {
+  width: 100%;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 26px 20px 80px;
+}
+.ws-panel {
+  max-width: var(--form-max);
+  margin: 24px auto 0;
+}
+.ws-eyebrow {
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--caramel);
+  margin-bottom: 10px;
+}
+.ws-h1 {
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+.ws-lede {
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--espresso2);
+  margin-bottom: 20px;
+}
+
+.ws-id {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.ws-idsub {
+  font-size: 13px;
+  color: var(--faint);
+}
+
+/* The one delivery the cafe cares about most, on the deep surface. */
+.ws-next {
+  background: var(--ink);
+  color: var(--ink-fg);
+  border-radius: 16px;
+  padding: 20px 22px;
+  margin-bottom: 28px;
+}
+.ws-next-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ws-next-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-accent);
+  margin-bottom: 4px;
+}
+.ws-next-when {
+  font-style: italic;
+  font-size: 24px;
+  font-weight: 600;
+}
+.ws-next-items {
+  font-size: 13.5px;
+  color: var(--ink-fg2);
+  margin-top: 6px;
+}
+.ws-next-total {
+  font-variant-numeric: tabular-nums;
+}
+.ws-next-pill {
+  display: inline-flex;
+  padding: 5px 13px;
+  border-radius: 16px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: rgba(201, 139, 45, 0.18);
+  color: var(--ink-accent);
+  border: 1px solid rgba(201, 139, 45, 0.4);
+  white-space: nowrap;
+}
+
+.ws-section {
+  margin-bottom: 28px;
+}
+.ws-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 3px double var(--line);
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+}
+.ws-h2 {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--caramel);
+}
+.ws-section > .ws-h2 {
+  border-bottom: 3px double var(--line);
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+.ws-section-head .btn-sm {
+  width: auto;
+}
+.ws-hint {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--faint);
+  margin: 0 0 14px;
+  max-width: 60ch;
+}
+.ws-empty {
+  font-size: 13.5px;
+  color: var(--muted);
+  padding: 10px 0;
+}
+.ws-retail-strike {
+  color: var(--faint);
+  text-decoration: line-through;
+}
+.ws-trade {
+  font-weight: 600;
+  color: var(--caramel);
+}
+
+/* ---- the standing order builder ---- */
+.ws-soform {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.ws-days {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 8px 0 16px;
+}
+.ws-solines {
+  display: flex;
+  flex-direction: column;
+}
+.ws-soline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+.ws-soline:last-child {
+  border-bottom: none;
+}
+.ws-soline-name {
+  font-size: 14px;
+}
+.ws-soline-name small {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.ws-soform-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.ws-sototal {
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.ws-soform-btns {
+  display: flex;
+  gap: 8px;
+}
+
+/* ---- saved standing orders ---- */
+.ws-solist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ws-so {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.ws-so.paused {
+  border-style: dashed;
+  border-color: var(--muted2);
+  opacity: 0.7;
+}
+.ws-so-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.ws-so-day {
+  font-weight: 500;
+  font-size: 15px;
+}
+.ws-so-items {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--muted);
+  margin: 7px 0 10px;
+}
+.ws-so-total {
+  font-variant-numeric: tabular-nums;
+}
+.ws-so-btns {
+  display: flex;
+  gap: 8px;
+}
+
+/* ---- the delivery schedule ---- */
+.ws-deliveries {
+  display: flex;
+  flex-direction: column;
+}
+.ws-delivery {
+  display: grid;
+  grid-template-columns: 92px 1fr auto;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13.5px;
+}
+.ws-delivery-date {
+  font-weight: 500;
+  white-space: nowrap;
+}
+.ws-delivery-items {
+  color: var(--espresso2);
+  line-height: 1.5;
+}
+.ws-delivery-total {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ws-runtotal {
+  font-size: 13.5px;
+  font-weight: 500;
+  text-align: right;
+  padding: 12px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- reviews ---- */
+/* Typographic stars, everywhere reviews appear. Filled is caramel, the rest
+   of the row is muted, and the accessible name carries the number. */
+.stars {
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+.stars-off {
+  color: var(--line);
+}
+.stars-admin {
+  font-weight: 400;
+  font-size: 13px;
+}
+
+/* On the product page, under the add row. Praise sits below the decision,
+   never in the way of it. */
+.revs {
+  margin-top: 28px;
+}
+.revs-head {
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--caramel);
+  margin-bottom: 12px;
+}
+.revs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rev {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.rev-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+}
+.rev-author {
+  color: var(--faint);
+}
+.rev-body {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* The review form, inside an order card in the account sheet. */
+.acct-revrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.acct-revrow .btn {
+  width: auto;
+}
+.acct-revform {
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+.ratepick {
+  display: flex;
+  gap: 2px;
+  margin: 8px 0 10px;
+}
+.ratestar {
+  width: var(--tap);
+  height: var(--tap);
+  font-size: 26px;
+  line-height: 1;
+  color: var(--muted2);
+  transition: color 0.1s ease-out, transform 0.1s ease-out;
+}
+.ratestar.on {
+  color: var(--caramel);
+}
+.ratestar:active {
+  transform: scale(1.15);
+}
+.revtext {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--espresso);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 11px 13px;
+  resize: vertical;
+  outline: none;
+}
+.revtext:focus-visible {
+  border-color: var(--espresso);
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.acct-revform-btns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+.acct-revform-btns .btn {
+  width: auto;
+}
+
+/* ---- the staff gate ---- */
+.admin-gate {
+  max-width: var(--form-max);
+  margin: 0 auto;
+  padding: 44px 20px 60px;
+}
+.admin-gate-h {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.admin-gate .admin-hint {
+  margin-bottom: 18px;
+}
+
+/* ---- delivery run + subscription pickups on the pass ---- */
+.ticket-skip {
+  opacity: 0.6;
+}
+.subruns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.subrun {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: baseline;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 12px 16px;
+  font-size: 13.5px;
+}
+.subrun span {
+  color: var(--espresso2);
+}
+.subrun-amt {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---- bespoke pipeline on the counter ---- */
+.weekcaps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.weekcap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 15px;
+}
+.weekcap.full {
+  border-color: var(--hot);
+}
+.weekcap-label {
+  font-size: 13.5px;
+  font-weight: 500;
+}
+.weekcap-label small {
+  display: block;
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--muted);
+}
+.quoteform {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.numin-wide {
+  width: 120px;
+}
+.approw-btns-col {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.approw-done {
+  opacity: 0.55;
+}
+
+/* ---- the portal's skips and invoices ---- */
+.ws-delivery {
+  grid-template-columns: 92px 1fr auto auto;
+}
+.ws-delivery.skipped .ws-delivery-items,
+.ws-delivery.skipped .ws-delivery-date {
+  color: var(--muted2);
+  text-decoration: line-through;
+}
+.ws-skiptag,
+.ws-stagetag {
+  font-style: normal;
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 12px;
+}
+.ws-delivery-act .btn {
+  width: auto;
+}
+.ws-invoice {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.ws-invoice-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 600;
+  font-size: 14.5px;
+  font-variant-numeric: tabular-nums;
+}
+.ws-invoice-lines {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+}
+.ws-invoice-lines li {
+  display: grid;
+  grid-template-columns: 92px 1fr auto;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+.ws-invoice-lines li:last-child {
+  border-bottom: none;
+}
+.ws-invoice-linedet {
+  color: var(--espresso2);
+}
+.ws-invoice-lineamt {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ws-invoice-foot {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---- weekly subscriptions in the account sheet ---- */
+.acct-subs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.acct-sub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+}
+.acct-sub.paused {
+  opacity: 0.6;
+}
+.acct-sub-main {
+  font-size: 14px;
+}
+.acct-sub-main small {
+  display: block;
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.acct-sub .btn {
+  width: auto;
+  flex: 0 0 auto;
+}
+.acct-subedit {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* =========================================================================
+   BESPOKE, the commission page
+
+   Website voice on a narrow measure. The form is the only tool on it.
+   ========================================================================= */
+.bespoke {
+  min-height: 100dvh;
+  background: var(--cream);
+  display: flex;
+  flex-direction: column;
+}
+.bespoke-bar {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding: 26px 20px 8px;
+}
+.bespoke-theme {
+  position: absolute;
+  right: 12px;
+  top: 22px;
+}
+.bespoke-main {
+  width: 100%;
+  max-width: 580px;
+  margin: 0 auto;
+  padding: 26px 20px 60px;
+}
+.bespoke-h1 {
+  font-size: clamp(34px, 7vw, 46px);
+  font-weight: 600;
+  line-height: 1.06;
+  margin-bottom: 14px;
+  text-align: center;
+}
+.bespoke-lede {
+  font-size: 15px;
+  line-height: 1.75;
+  font-weight: 300;
+  color: var(--muted);
+  max-width: 48ch;
+  margin: 0 auto 26px;
+  text-align: center;
+}
+.bespoke-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 14px 0;
+  margin-bottom: 30px;
+  border-top: 3px double var(--line);
+  border-bottom: 3px double var(--line);
+}
+.bespoke-steps li {
+  text-align: center;
+}
+.bespoke-step-num {
+  display: block;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--caramel);
+}
+.bespoke-step-label {
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.bespoke-form .field {
+  margin-bottom: 14px;
+}
+.bespoke-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.bespoke-done {
+  text-align: center;
+  padding: 20px 0;
+}
+.bespoke-done h2 {
+  font-size: 30px;
+  font-weight: 600;
+}
+.bespoke-done p {
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--muted);
+  max-width: 44ch;
+  margin: 12px auto 0;
+}
+.bespoke-foot {
+  text-align: center;
+  padding: 20px;
+  border-top: 1px solid var(--line);
+}
+.bespoke-foot a {
+  font-size: 13px;
+  color: var(--espresso2);
+  text-underline-offset: 3px;
+}
+
+/* ---- the outbox ---- */
+.outbox-counts {
+  margin-bottom: 12px;
+}
+.outbox-text {
+  max-width: 46ch;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--espresso2);
+}
+.outbox-err {
+  display: block;
+  font-size: 11px;
+  color: var(--hot);
+  margin-top: 3px;
+}
+
+/* =========================================================================
+   TABLET AND UP
+   ========================================================================= */
+@media (min-width: 700px) {
+  .stats {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  .tickets {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .admin-main {
+    padding: 20px 24px 60px;
+  }
+  .admin-dates .micro {
+    padding-left: 24px;
+  }
+  .slotrow {
+    grid-template-columns: 110px auto 1fr auto;
+    grid-template-areas: "time load bar input";
+  }
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding: 4px 24px;
+  }
+  .card-photo {
+    height: 168px;
+  }
+  .showcase {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .product {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+    gap: 32px;
+    padding: 24px;
+  }
+  .product-photo {
+    height: 420px;
+    border-radius: var(--r-md);
+  }
+  .product-copy {
+    padding: 8px 0 40px;
+  }
+}
+
+/* =========================================================================
+   DESKTOP
+   ========================================================================= */
+@media (min-width: 1000px) {
+  /* ---- the website goes wide and editorial ---- */
+  .site-header {
+    grid-template-columns: 1fr auto 1fr;
+    padding: 26px 44px;
+  }
+  .site-address {
+    display: block;
+    justify-self: start;
+  }
+  .site-header .brand {
+    font-size: 17px;
+    justify-self: center;
+  }
+  .site-nav {
+    gap: 26px;
+  }
+  .site-nav > a:not(.btn) {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: var(--espresso2);
+    text-decoration: none;
+  }
+  .site-nav > a:not(.btn):hover {
+    color: var(--caramel);
+  }
+
+  .site-hero {
+    flex-direction: row;
+    align-items: stretch;
+    min-height: min(74vh, 620px);
+  }
+  .site-hero-visual {
+    flex: 1;
+  }
+  .site-hero-photo {
+    flex: 1;
+    height: auto;
+  }
+  .site-hero-copy {
+    width: 52%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px clamp(44px, 5vw, 64px);
+    border-right: 1px solid var(--line);
+  }
+
+  .site .section {
+    padding: 96px 44px;
+    max-width: var(--site-max);
+    margin: 0 auto;
+    width: 100%;
+  }
+  .showcase {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 48px 32px;
+  }
+  .showcase-photo {
+    height: 330px;
+  }
+
+  .split {
+    flex-direction: row;
+    align-items: stretch;
+  }
+  .split-reverse {
+    flex-direction: row-reverse;
+  }
+  .split-photo {
+    width: 52%;
+    height: auto;
+    min-height: 480px;
+  }
+  .split-copy {
+    width: 48%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 70px clamp(44px, 5vw, 76px);
+  }
+
+  .steps {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+  }
+
+  .site-footer {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 30px 44px;
+    text-align: left;
+  }
+
+  /* ---- the app stays a tool ---- */
+  .app-bar {
+    padding: 8px 20px;
+  }
+  .app-dates-label,
+  .daterail,
+  .cats,
+  .grid {
+    max-width: var(--app-max);
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .card-photo {
+    height: 180px;
+  }
+  .product {
+    gap: 44px;
+    padding: 32px 24px;
+  }
+  .tickets {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .admin-bar {
+    padding: 6px 24px;
+  }
+
+  /* The bag becomes a right drawer rather than a bottom sheet. */
+  .sheet {
+    left: auto;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    transform: none;
+    width: 420px;
+    max-width: 420px;
+    max-height: none;
+    border-radius: 0;
+    padding: 28px 28px 24px;
+    animation: slidein 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+    display: flex;
+    flex-direction: column;
+  }
+  .bag-list {
+    flex: 1;
+  }
+  @keyframes slidein {
+    from {
+      transform: translateX(100%);
+    }
+  }
+}
