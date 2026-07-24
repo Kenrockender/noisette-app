@@ -248,6 +248,10 @@ CREATE TABLE commissions (
   id             BIGSERIAL PRIMARY KEY,
   customer_id    BIGINT REFERENCES customers(id),
   whatsapp       TEXT NOT NULL,
+  -- The enquirer's contact name. Guests have no customers row to read it
+  -- from (customer_id is nullable, same as orders), so it is captured here
+  -- directly, exactly as lib/commissions.js's in-memory adapter does.
+  name           TEXT NOT NULL DEFAULT '',
   status         commission_status NOT NULL DEFAULT 'enquiry',
   needed_on      DATE NOT NULL,
   servings       INTEGER CHECK (servings > 0),
@@ -366,3 +370,25 @@ CREATE INDEX idx_invoices_commission ON invoices (commission_id);
 -- orders.status already carries 'cancelled'; a refund is recorded on the
 -- invoice above (status = 'refunded', refunded_at set), so the order and its
 -- money stay in one place each.
+
+-- ===========================================================================
+-- Plan.md #5 cutover additions: two small pieces the pg adapters need that had
+-- no table yet. Written down here rather than left implicit in code.
+-- ===========================================================================
+
+-- Human-readable invoice numbers (INV-00042, DINV-00007), continuing the
+-- Phase 1 in-memory counter which shared one sequence between order invoices
+-- and bespoke deposit invoices. Same doctrine as order_number_seq above.
+CREATE SEQUENCE IF NOT EXISTS invoice_number_seq START 1;
+
+-- The day-before reminder sweep (lib/reminders.js) must enqueue each reminder
+-- at most once, the same guarantee the in-memory Set gives it. A durable table
+-- is required here (not a derived query) because "was this reminder already
+-- sent" is not recoverable from the notifications row once it exists — two
+-- different reminders can share a template with different payloads on
+-- different days. One row per (kind, subject, date) reservation; the INSERT's
+-- ON CONFLICT DO NOTHING is the atomic compare-and-set.
+CREATE TABLE reminder_log (
+  reminder_key TEXT PRIMARY KEY,
+  sent_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);

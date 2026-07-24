@@ -40,7 +40,7 @@ export async function POST(req) {
 
   // The provider invoice is created with the order, exactly as it will be with
   // Xendit/Midtrans. Its window is the stock hold's window; one clock, not two.
-  const invoice = createInvoice(result.order);
+  const invoice = await createInvoice(result.order);
 
   return NextResponse.json(
     { order: result.order, invoice: { id: invoice.id, amount: invoice.amount, expiresAt: invoice.expiresAt } },

@@ -91,14 +91,14 @@ test("the owner can still edit their own standing order by id", async () => {
 /* ---- #2: webhook route must ack bespoke deposit callbacks ---- */
 
 test("the webhook route returns 200 for a bespoke deposit callback", async () => {
-  const c = submitCommission({
+  const c = await submitCommission({
     name: "Deposit Payer", whatsapp: "081200000199",
     neededOn: inDays(60), servings: 20, brief: "route-level deposit test",
   });
   assert.ok(c.commission, c.error);
-  quoteCommission(c.commission.id, 1_000_000, 500_000);
+  await quoteCommission(c.commission.id, 1_000_000, 500_000);
 
-  const made = createCommissionDepositInvoice(c.commission.id);
+  const made = await createCommissionDepositInvoice(c.commission.id);
   assert.ok(made.invoice, made.error);
   const rawBody = JSON.stringify({ invoiceId: made.invoice.id, status: "PAID", amount: made.invoice.amount });
 
@@ -122,7 +122,7 @@ test("the webhook route still acks a retail order callback", async () => {
     name: "Route Payer", whatsapp: "628123123124",
   });
   assert.ok(order.order, order.error);
-  const invoice = createInvoice(order.order);
+  const invoice = await createInvoice(order.order);
   const rawBody = JSON.stringify({ invoiceId: invoice.id, status: "PAID", amount: invoice.amount });
 
   const res = await webhookPost(signedRequest(rawBody));
@@ -140,7 +140,7 @@ test("a timestamped callback that is too old is refused as a replay", async () =
     name: "Stale Payer", whatsapp: "628123123125",
   });
   assert.ok(order.order, order.error);
-  const invoice = createInvoice(order.order);
+  const invoice = await createInvoice(order.order);
   const rawBody = JSON.stringify({
     invoiceId: invoice.id, status: "PAID", amount: invoice.amount,
     ts: Date.now() - 60 * 60 * 1000, // captured an hour ago

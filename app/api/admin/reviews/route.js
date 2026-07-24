@@ -33,7 +33,7 @@ export async function PATCH(request) {
 
   if (!body?.id) return Response.json({ error: "missing_fields" }, { status: 400 });
 
-  const res = moderateReview(body.id, !!body.publish);
+  const res = await moderateReview(body.id, !!body.publish);
   if (res.error) {
     return Response.json(res, { status: res.error === "not_found" ? 404 : 409 });
   }

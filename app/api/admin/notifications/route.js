@@ -20,8 +20,8 @@ export async function GET() {
   await enqueueDailyReminders();
   await drainQueue();
   return Response.json({
-    notifications: listNotifications(),
-    counts: notificationCounts(),
+    notifications: await listNotifications(),
+    counts: await notificationCounts(),
   });
 }
 
@@ -38,7 +38,7 @@ export async function PATCH(request) {
   }
   if (!body?.id) return Response.json({ error: "missing_fields" }, { status: 400 });
 
-  const res = retryNotification(body.id);
+  const res = await retryNotification(body.id);
   if (res.error) {
     return Response.json(res, { status: res.error === "not_found" ? 404 : 409 });
   }

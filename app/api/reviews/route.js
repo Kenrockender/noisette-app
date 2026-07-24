@@ -15,13 +15,13 @@ export async function GET(request) {
     const c = await currentCustomer();
     if (!c) return Response.json({ error: "not_signed_in" }, { status: 401 });
     return Response.json({
-      reviews: myReviews(c.id),
+      reviews: await myReviews(c.id),
       reviewable: await reviewableItems(c.id),
     });
   }
 
   if (url.searchParams.get("all")) {
-    return Response.json({ stats: allProductStats() });
+    return Response.json({ stats: await allProductStats() });
   }
 
   const productId = url.searchParams.get("product");

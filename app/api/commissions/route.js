@@ -12,7 +12,7 @@ export async function GET(request) {
 
   const c = await currentCustomer();
   if (!c) return Response.json({ error: "not_signed_in" }, { status: 401 });
-  return Response.json({ commissions: commissionsFor(c.whatsapp) });
+  return Response.json({ commissions: await commissionsFor(c.whatsapp) });
 }
 
 /**
@@ -30,7 +30,7 @@ export async function POST(request) {
   }
 
   const customer = await currentCustomer();
-  const res = submitCommission({
+  const res = await submitCommission({
     customerId: customer?.id ?? null,
     name: body?.name,
     whatsapp: body?.whatsapp,

@@ -12,9 +12,10 @@ export async function GET() {
   const guard = await requireStaff();
   if (guard.res) return guard.res;
 
+  const commissions = await listCommissions();
   return Response.json({
-    commissions: listCommissions().map((c) => ({ ...c, whatsapp: displayWhatsapp(c.whatsapp) })),
-    weeks: commissionWeeks(),
+    commissions: commissions.map((c) => ({ ...c, whatsapp: displayWhatsapp(c.whatsapp) })),
+    weeks: await commissionWeeks(),
   });
 }
 
@@ -37,7 +38,7 @@ export async function PATCH(request) {
   }
 
   if (body?.week) {
-    const res = setWeekCapacity(body.week, body.maxCakes);
+    const res = await setWeekCapacity(body.week, body.maxCakes);
     return res.error ? Response.json(res, { status: 409 }) : Response.json(res);
   }
 
@@ -45,7 +46,7 @@ export async function PATCH(request) {
 
   let res;
   if (body.quote !== undefined) {
-    res = quoteCommission(body.id, body.quote, body.deposit);
+    res = await quoteCommission(body.id, body.quote, body.deposit);
     if (!res.error) {
       enqueueNotification({
         to: res.commission.whatsapp,
@@ -58,15 +59,15 @@ export async function PATCH(request) {
       });
     }
   } else if (body.decline) {
-    res = declineCommission(body.id);
-  } else if (getCommission(body.id)?.status === "quoted") {
+    res = await declineCommission(body.id);
+  } else if ((await getCommission(body.id))?.status === "quoted") {
     // "Deposit received" for a quoted commission goes through the same signed
     // webhook door a customer's own "pay deposit" tap uses, so a staff-confirmed
     // deposit and a self-serve one leave the identical invoice trail. It also
     // enqueues commission_deposit_paid itself; the route must not repeat that.
     res = await simulateCommissionDeposit(body.id);
   } else {
-    res = advanceCommission(body.id);
+    res = await advanceCommission(body.id);
     // The one other moment worth telling the customer about, unrelated to money.
     if (!res.error && res.commission.status === "ready") {
       enqueueNotification({

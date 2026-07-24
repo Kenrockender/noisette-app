@@ -31,15 +31,15 @@ async function freshOrder(productId = "eggtart") {
 
 test("an invoice is minted once per order (idempotent)", async () => {
   const order = await freshOrder();
-  const a = createInvoice(order);
-  const b = createInvoice(order);
+  const a = await createInvoice(order);
+  const b = await createInvoice(order);
   assert.equal(a.id, b.id);
-  assert.equal(invoiceForOrder(order.id).id, a.id);
+  assert.equal((await invoiceForOrder(order.id)).id, a.id);
 });
 
 test("a callback with a bad signature is rejected and learns nothing", async () => {
   const order = await freshOrder();
-  const invoice = createInvoice(order);
+  const invoice = await createInvoice(order);
   const rawBody = JSON.stringify({ invoiceId: invoice.id, status: "PAID", amount: invoice.amount });
   const res = await handlePaymentCallback(rawBody, "deadbeef");
   assert.equal(res.error, "bad_signature");
@@ -47,7 +47,7 @@ test("a callback with a bad signature is rejected and learns nothing", async () 
 
 test("a valid signed callback pays the order, and replays are safe", async () => {
   const order = await freshOrder();
-  const invoice = createInvoice(order);
+  const invoice = await createInvoice(order);
   const rawBody = JSON.stringify({ invoiceId: invoice.id, status: "PAID", amount: invoice.amount });
   const sig = signPayload(rawBody);
 
@@ -59,7 +59,7 @@ test("a valid signed callback pays the order, and replays are safe", async () =>
 
 test("an amount mismatch leaves the order unpaid", async () => {
   const order = await freshOrder();
-  const invoice = createInvoice(order);
+  const invoice = await createInvoice(order);
   const rawBody = JSON.stringify({ invoiceId: invoice.id, status: "PAID", amount: invoice.amount + 1 });
   const res = await handlePaymentCallback(rawBody, signPayload(rawBody));
   assert.equal(res.error, "amount_mismatch");
@@ -90,9 +90,9 @@ test("cancelling a paid order releases stock and refunds the invoice, idempotent
 
 test("a bespoke deposit goes through the same signed door, and books the week", async () => {
   const neededOn = inDays(90);
-  const c = submitCommission({ name: "Payer2", whatsapp: "081200000090", neededOn, servings: 20, brief: "brief" });
+  const c = await submitCommission({ name: "Payer2", whatsapp: "081200000090", neededOn, servings: 20, brief: "brief" });
   assert.ok(c.commission, c.error);
-  quoteCommission(c.commission.id, 1_000_000, 500_000);
+  await quoteCommission(c.commission.id, 1_000_000, 500_000);
 
   const res = await simulateCommissionDeposit(c.commission.id);
   assert.equal(res.commission.status, "deposit_paid", res.error);
@@ -108,10 +108,10 @@ test("a bespoke deposit goes through the same signed door, and books the week", 
 test("a bespoke deposit is refused once the week is full", async () => {
   const neededOn = inDays(150); // far enough from the other test's date to land in a different week
   const week = weekStartOf(neededOn);
-  const cap = setWeekCapacity(week, 0);
+  const cap = await setWeekCapacity(week, 0);
   assert.ok(cap.ok, cap.error);
-  const c = submitCommission({ name: "Payer3", whatsapp: "081200000091", neededOn, servings: 20, brief: "brief" });
-  quoteCommission(c.commission.id, 1_000_000, 500_000);
+  const c = await submitCommission({ name: "Payer3", whatsapp: "081200000091", neededOn, servings: 20, brief: "brief" });
+  await quoteCommission(c.commission.id, 1_000_000, 500_000);
 
   const res = await simulateCommissionDeposit(c.commission.id);
   assert.equal(res.error, "week_full");
