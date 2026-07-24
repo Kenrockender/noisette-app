@@ -24,7 +24,7 @@ export default async function OrderPage() {
   // visitor's cookie and never block the catalog).
   const avail = await getAvailability();
   const products = getProducts();
-  const stats = allProductStats();
+  const stats = await allProductStats();
 
   return <OrderApp initialProducts={products} initialAvail={avail} initialStats={stats} />;
 }

@@ -698,6 +698,24 @@ a {
   opacity: 0.9;
 }
 
+.showcase-note {
+  margin-top: 42px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px 24px;
+}
+.showcase-note p {
+  font-size: 14px;
+  line-height: 1.65;
+  font-weight: 300;
+  color: var(--espresso2);
+  max-width: 56ch;
+}
+
 .split {
   display: flex;
   flex-direction: column;
@@ -858,6 +876,77 @@ a {
   letter-spacing: 0.12em;
   color: var(--ink-fg2);
   opacity: 0.7;
+}
+
+/* The cafe menu at /cafe: a menu to read, no photos, prices as "Tanya harga"
+   until ci Ariel confirms them (lib/cafe-menu.js, PRICES_CONFIRMED). */
+.cafe-h1 {
+  font-size: clamp(34px, 9vw, 56px);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  margin-bottom: 6px;
+}
+.cafe-menu {
+  margin-top: 40px;
+}
+.cafe-cat {
+  margin-bottom: 52px;
+}
+.cafe-cat:last-child {
+  margin-bottom: 0;
+}
+.cafe-cat-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 3px double var(--line);
+}
+.cafe-cat-head h2 {
+  font-size: clamp(22px, 5vw, 30px);
+  font-weight: 600;
+  line-height: 1.1;
+}
+.cafe-cat-count {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.cafe-list {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+.cafe-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+}
+.cafe-item-name {
+  font-size: 16px;
+  font-weight: 500;
+}
+.cafe-item-note {
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.55;
+  color: var(--espresso2);
+  margin-top: 4px;
+  max-width: 46ch;
+}
+.cafe-item-price {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--caramel);
+  white-space: nowrap;
 }
 
 /* =========================================================================
@@ -3497,6 +3586,10 @@ a {
   }
   .showcase-photo {
     height: 330px;
+  }
+  .cafe-list {
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 48px;
   }
 
   .split {
