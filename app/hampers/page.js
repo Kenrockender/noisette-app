@@ -33,10 +33,7 @@ export default function HampersPage() {
           <br />
           <em className="accent-em">disusun untukmu</em>
         </h1>
-        <p className="bespoke-lede">
-          Ceritakan isi yang kamu mau, admin kami yang menyusun dan
-          menghubungimu langsung di WhatsApp untuk konfirmasi dan pembayaran.
-        </p>
+        <p className="bespoke-lede">Form order</p>
 
         <HampersForm />
       </main>

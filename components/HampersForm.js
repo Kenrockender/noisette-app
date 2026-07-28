@@ -111,28 +111,9 @@ export default function HampersForm() {
           <p className="hamper-type-hint">Ceritakan tema hampers custom kamu di kolom catatan di bawah.</p>
         )}
       </div>
-      <div className="bespoke-row">
-        <div className="field">
-          <label htmlFor="h-date">Dibutuhkan tanggal</label>
-          <input id="h-date" type="date" min={today()} value={neededOn} onChange={(e) => setNeededOn(e.target.value)} />
-        </div>
-        <div className="field">
-          <label htmlFor="h-qty">Jumlah hampers</label>
-          <input id="h-qty" type="number" min={1} inputMode="numeric" value={qty} onChange={(e) => setQty(e.target.value)} placeholder="1" />
-        </div>
-      </div>
-      <div className="field">
-        <label htmlFor="h-notes">Catatan tambahan (opsional)</label>
-        <input
-          id="h-notes"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder={contents === "Custom" ? "Tema, isi, warna kemasan, dll" : "Occasion, dll"}
-        />
-      </div>
 
       <div className="hamper-recipients">
-        <p className="hamper-recipients-label">Alamat &amp; kartu ucapan (opsional)</p>
+        <p className="hamper-recipients-label">Alamat &amp; kartu ucapan</p>
         {recipients.map((r, i) => (
           <div key={i} className="hamper-recipient">
             <div className="field">
@@ -172,6 +153,26 @@ export default function HampersForm() {
         <button type="button" className="btn btn-sm ghost" onClick={() => setRecipients((rs) => [...rs, emptyRecipient()])}>
           + Tambah alamat &amp; kartu
         </button>
+      </div>
+
+      <div className="bespoke-row">
+        <div className="field">
+          <label htmlFor="h-date">Dibutuhkan tanggal</label>
+          <input id="h-date" type="date" min={today()} value={neededOn} onChange={(e) => setNeededOn(e.target.value)} />
+        </div>
+        <div className="field">
+          <label htmlFor="h-qty">Jumlah hampers</label>
+          <input id="h-qty" type="number" min={1} inputMode="numeric" value={qty} onChange={(e) => setQty(e.target.value)} placeholder="1" />
+        </div>
+      </div>
+      <div className="field">
+        <label htmlFor="h-notes">Notes (opsional)</label>
+        <input
+          id="h-notes"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder={contents === "Custom" ? "Tema, isi, warna kemasan, dll" : "Occasion, dll"}
+        />
       </div>
 
       <button type="button" className="btn" disabled={busy || !name.trim() || !wa.trim() || !neededOn || !contents.trim()} onClick={submit}>

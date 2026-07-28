@@ -2415,7 +2415,10 @@ a {
   margin-bottom: 14px;
   max-width: 60ch;
 }
-.hampers-export-btn {
+.hampers-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 16px;
 }
 .admin-empty {

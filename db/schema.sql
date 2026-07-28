@@ -335,10 +335,11 @@ CREATE INDEX idx_wholesale_applications_status ON wholesale_applications (status
 -- Hampers custom orders. Requested by ci Ariel as its own flow, deliberately
 -- NOT the bespoke enquiry -> quote -> deposit pipeline: a hampers order has no
 -- quote stage and no weekly capacity, because ci Ariel recaps every request
--- by hand and only opens WhatsApp herself once, to chase payment. `paid` is
--- the one flag that pipeline needs, flipped from the counter once money
--- lands. Mirrors `commissions` in shape (guest-first, one form, one contact),
--- not in status flow.
+-- by hand and only opens WhatsApp herself once, to chase payment. `paid` and
+-- `sent` are the two flags that pipeline needs, each flipped independently
+-- from the counter: money landing and the hamper actually going out are two
+-- separate events, not one status. Mirrors `commissions` in shape
+-- (guest-first, one form, one contact), not in status flow.
 --
 -- `budget_idr` is unused by the app since 2026-07-27 (dropped from the form
 -- when ci Ariel asked for per-recipient address + card instead) but kept
@@ -363,6 +364,8 @@ CREATE TABLE hampers_orders (
   recipients    JSONB NOT NULL DEFAULT '[]'::jsonb,
   paid          BOOLEAN NOT NULL DEFAULT FALSE,
   paid_at       TIMESTAMPTZ,
+  sent          BOOLEAN NOT NULL DEFAULT FALSE,
+  sent_at       TIMESTAMPTZ,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_hampers_needed ON hampers_orders (needed_on);

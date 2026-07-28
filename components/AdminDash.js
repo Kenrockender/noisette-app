@@ -305,6 +305,7 @@ export default function AdminDash() {
   const [hp, setHp] = useState(null); // hampers requests
   const [editingHamperId, setEditingHamperId] = useState(null);
   const [deletingHamperId, setDeletingHamperId] = useState(null); // hamper id pending delete confirm
+  const [hampersSortDesc, setHampersSortDesc] = useState(false);
   const [clock, setClock] = useState(() => new Date()); // the header clock
   const dateRef = useRef(null);
 
@@ -462,6 +463,22 @@ export default function AdminDash() {
     }
   };
 
+  const setHamperSent = async (id, sent) => {
+    setBusy(true);
+    setErr("");
+    try {
+      const res = await fetch("/api/admin/hampers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, sent }),
+      });
+      if (!res.ok) setErr("Status kirim itu belum tersimpan.");
+      await loadHp();
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const saveHamperEdit = async (id, edit) => {
     setBusy(true);
     setErr("");
@@ -508,8 +525,12 @@ export default function AdminDash() {
       })
       .join(" || ");
 
-  // Soonest-needed first, so ci Ariel's recap reads in the order she has to act on it.
-  const sortedHamperOrders = [...(hp?.orders ?? [])].sort((a, b) => a.neededOn.localeCompare(b.neededOn));
+  // Soonest-needed first by default, so ci Ariel's recap reads in the order
+  // she has to act on it — flippable from the tab itself, same as the Excel
+  // column sort.
+  const sortedHamperOrders = [...(hp?.orders ?? [])].sort((a, b) =>
+    hampersSortDesc ? b.neededOn.localeCompare(a.neededOn) : a.neededOn.localeCompare(b.neededOn)
+  );
 
   // Excel recap ci Ariel asked for: one row per request, opened in Excel —
   // styled like a real recap (header band, zebra rows, paid/unpaid color)
@@ -544,6 +565,7 @@ export default function AdminDash() {
       { header: "Alamat & Kartu Ucapan", key: "recipients", width: 42 },
       { header: "Catatan", key: "notes", width: 28 },
       { header: "Status Bayar", key: "paid", width: 14 },
+      { header: "Status Kirim", key: "sent", width: 14 },
     ];
     sheet.columns = columns;
 
@@ -586,6 +608,7 @@ export default function AdminDash() {
         recipients: recipientsText(o.recipients) || "-",
         notes: o.notes || "-",
         paid: o.paid ? "Lunas" : "Belum bayar",
+        sent: o.sent ? "Terkirim" : "Belum terkirim",
       });
       row.getCell("neededOn").numFmt = "dddd, d mmm yyyy";
       row.eachCell((cell, colNumber) => {
@@ -598,6 +621,10 @@ export default function AdminDash() {
       statusCell.font = { name: "Calibri", size: 10.5, bold: true, color: { argb: o.paid ? PAID_TEXT : UNPAID_TEXT } };
       statusCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: o.paid ? PAID : UNPAID } };
       statusCell.alignment = { vertical: "middle", horizontal: "center" };
+      const sentCell = row.getCell("sent");
+      sentCell.font = { name: "Calibri", size: 10.5, bold: true, color: { argb: o.sent ? PAID_TEXT : UNPAID_TEXT } };
+      sentCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: o.sent ? PAID : UNPAID } };
+      sentCell.alignment = { vertical: "middle", horizontal: "center" };
     });
 
     sheet.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3, column: columns.length } };
@@ -1422,14 +1449,24 @@ export default function AdminDash() {
 
         {tab === "hampers" && (
           <section role="tabpanel" id="panel-hampers" aria-labelledby="tab-hampers">
-            <button
-              type="button"
-              className="btn btn-sm ghost hampers-export-btn"
-              disabled={!hp?.orders?.length}
-              onClick={downloadHampersXlsx}
-            >
-              Unduh rekap Excel
-            </button>
+            <div className="hampers-toolbar">
+              <button
+                type="button"
+                className="btn btn-sm ghost"
+                disabled={!hp?.orders?.length}
+                onClick={() => setHampersSortDesc((d) => !d)}
+              >
+                Tanggal {hampersSortDesc ? "terbaru" : "terdekat"} dulu {hampersSortDesc ? "↓" : "↑"}
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm ghost"
+                disabled={!hp?.orders?.length}
+                onClick={downloadHampersXlsx}
+              >
+                Unduh rekap Excel
+              </button>
+            </div>
 
             {hp === null && <p className="admin-empty">Memuat</p>}
             {hp?.orders.length === 0 && <p className="admin-empty">Belum ada permintaan hampers.</p>}
@@ -1445,6 +1482,7 @@ export default function AdminDash() {
                         <b>
                           {o.name}{" "}
                           <span className={`pill ${o.paid ? "pill-paid" : "pill-out"}`}>{o.paid ? "Lunas" : "Belum bayar"}</span>
+                          {o.sent && <span className="pill pill-ready">Terkirim</span>}
                           {dupe && <span className="pill pill-out">Kemungkinan dobel</span>}
                         </b>
                         <small>
@@ -1484,6 +1522,9 @@ export default function AdminDash() {
                         <div className="approw-btns approw-btns-col">
                           <button type="button" className="btn btn-sm" disabled={busy} onClick={() => setHamperPaid(o.id, !o.paid)}>
                             {o.paid ? "Tandai belum bayar" : "Tandai lunas"}
+                          </button>
+                          <button type="button" className="btn btn-sm ghost" disabled={busy} onClick={() => setHamperSent(o.id, !o.sent)}>
+                            {o.sent ? "Tandai belum terkirim" : "Tandai terkirim"}
                           </button>
                           <button type="button" className="btn btn-sm ghost" disabled={busy} onClick={() => setEditingHamperId(o.id)}>
                             Edit

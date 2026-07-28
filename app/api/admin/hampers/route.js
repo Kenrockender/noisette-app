@@ -1,4 +1,4 @@
-import { listHampers, setHamperPaid, updateHamper, deleteHamper } from "@/lib/hampers";
+import { listHampers, setHamperPaid, setHamperSent, updateHamper, deleteHamper } from "@/lib/hampers";
 import { displayWhatsapp } from "@/lib/auth";
 import { requireStaff } from "@/lib/staff";
 
@@ -17,7 +17,8 @@ export async function GET() {
 
 /**
  * PATCH, one verb per body shape:
- *   { id, paid }   flip the one status flag this flow has
+ *   { id, paid }   flip the payment flag
+ *   { id, sent }   flip the delivered flag — independent of payment
  *   { id, edit }   correct any of the request's own fields
  */
 export async function PATCH(request) {
@@ -32,7 +33,11 @@ export async function PATCH(request) {
   }
   if (!body?.id) return Response.json({ error: "missing_fields" }, { status: 400 });
 
-  const res = body.edit ? await updateHamper(body.id, body.edit) : await setHamperPaid(body.id, body.paid);
+  const res = body.edit
+    ? await updateHamper(body.id, body.edit)
+    : body.sent !== undefined
+      ? await setHamperSent(body.id, body.sent)
+      : await setHamperPaid(body.id, body.paid);
   if (res.error) return Response.json(res, { status: res.error === "not_found" ? 404 : 409 });
   return Response.json(res);
 }
