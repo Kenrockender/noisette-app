@@ -720,6 +720,9 @@ export default function AdminDash() {
           <button type="button" className="btn" disabled={!pin.trim() || busy} onClick={signIn}>
             {busy ? "Memeriksa" : "Masuk"}
           </button>
+          <Link href="/admin/install" className="linkbtn admin-install-link">
+            Belum pasang aplikasinya? Lihat caranya
+          </Link>
         </main>
       </div>
     );
@@ -797,7 +800,19 @@ export default function AdminDash() {
       </header>
 
       <div className="admin-dates">
-        <p className="micro" id="trading-day">Hari dagang</p>
+        <div className="admin-dates-head">
+          <p className="micro" id="trading-day">Hari dagang</p>
+          <label className="date-jump">
+            <Icon name="calendar" size={16} />
+            <span className="sr-only">Lompat ke tanggal</span>
+            <input
+              type="date"
+              value={day.date}
+              min={day.dates[0]}
+              onChange={(e) => e.target.value && load(e.target.value)}
+            />
+          </label>
+        </div>
         <ul className="daterail" aria-labelledby="trading-day">
           {day.dates.map((d) => (
             <li key={d}>
@@ -841,6 +856,20 @@ export default function AdminDash() {
             <dd className={t.awaitingCollection ? "hot" : ""}>{t.awaitingCollection}</dd>
           </div>
         </dl>
+
+        <div className="tabs-mobile">
+          <label htmlFor="admin-tab-select" className="sr-only">Bagian</label>
+          <select
+            id="admin-tab-select"
+            className="tabs-select"
+            value={tab}
+            onChange={(e) => { setTab(e.target.value); setErr(""); }}
+          >
+            {TABS.map((x) => (
+              <option key={x.id} value={x.id}>{x.label}</option>
+            ))}
+          </select>
+        </div>
 
         <div className="tabs" role="tablist" aria-label="Sections">
           {TABS.map((x) => (

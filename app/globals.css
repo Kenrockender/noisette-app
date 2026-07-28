@@ -2134,6 +2134,11 @@ a {
   padding: 8px 0 0;
   min-height: auto;
 }
+.acct-install-link {
+  display: block;
+  text-align: center;
+  margin-top: 4px;
+}
 .acct-cancel-confirm {
   margin-top: 8px;
   padding-top: 8px;
@@ -2251,8 +2256,40 @@ a {
   border-bottom: 1px solid var(--line);
   padding: 12px 0 10px;
 }
-.admin-dates .micro {
+.admin-dates-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 0 16px 8px;
+}
+.admin-dates-head .micro {
+  padding: 0;
+}
+.date-jump {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap);
+  height: var(--tap);
+  margin: -10px;
+  color: var(--espresso2);
+}
+.date-jump input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+/* Phone: the trading-day rail only needs the next few days at a glance —
+   the date-jump calendar reaches anything further, so the rest of the
+   28-day horizon stays out of the scroll. */
+@media (max-width: 699px) {
+  .daterail li:nth-child(n + 6) {
+    display: none;
+  }
 }
 
 .admin-main {
@@ -2303,6 +2340,21 @@ a {
   color: var(--hot);
 }
 
+.tabs-mobile {
+  margin-bottom: 18px;
+}
+.tabs-select {
+  width: 100%;
+  min-height: var(--tap);
+  border: 1px solid var(--muted2);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--espresso);
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 500;
+  padding: 12px 15px;
+}
 .tabs {
   display: flex;
   gap: 6px;
@@ -2329,6 +2381,19 @@ a {
   background: var(--espresso);
   border-color: var(--espresso);
   font-weight: 500;
+}
+/* Phone: the 8-section tab strip is a horizontal-scroll maze at this width,
+   so a native dropdown replaces it; tablet and up get the tab strip back,
+   since that's the form factor this counter is actually built for. */
+@media (max-width: 699px) {
+  .tabs {
+    display: none;
+  }
+}
+@media (min-width: 700px) {
+  .tabs-mobile {
+    display: none;
+  }
 }
 
 .tabs-sm {
@@ -3180,6 +3245,11 @@ a {
 .admin-gate .admin-hint {
   margin-bottom: 18px;
 }
+.admin-install-link {
+  display: block;
+  text-align: center;
+  margin-top: 4px;
+}
 
 /* ---- delivery run + subscription pickups on the pass ---- */
 .ticket-skip {
@@ -3525,6 +3595,87 @@ a {
   font-size: 13px;
   color: var(--espresso2);
   text-underline-offset: 3px;
+}
+
+/* ---- install guide ---- */
+.install-guide-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.install-guide-icon {
+  border-radius: 14px;
+  flex: 0 0 auto;
+}
+.install-guide-app {
+  font-size: 17px;
+  font-weight: 600;
+}
+.install-guide-tagline {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.install-guide-done {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ok);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 13px 15px;
+  background: var(--cream2);
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+.install-guide-hint {
+  font-size: 12.5px;
+  color: var(--faint);
+  margin-top: 10px;
+  text-align: center;
+}
+.install-guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 22px;
+}
+.install-guide-detail {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 4px 16px;
+  background: var(--surface);
+}
+.install-guide-detail summary {
+  padding: 14px 0;
+  font-size: 14.5px;
+  font-weight: 500;
+  cursor: pointer;
+  list-style: none;
+}
+.install-guide-detail summary::-webkit-details-marker {
+  display: none;
+}
+.install-guide-detail summary::before {
+  content: "+";
+  display: inline-block;
+  width: 18px;
+  color: var(--gold);
+  font-weight: 600;
+}
+.install-guide-detail[open] summary::before {
+  content: "–";
+}
+.install-guide-detail ol {
+  list-style: decimal;
+  padding: 0 0 16px 20px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+.install-guide-detail ol li + li {
+  margin-top: 8px;
 }
 
 /* ---- the outbox ---- */

@@ -277,6 +277,7 @@ export default function LandingPage() {
           <Link href="/bespoke">Bespoke</Link>
           <Link href="/hampers">Hampers</Link>
           <Link href="/admin">Konter</Link>
+          <Link href="/install">Pasang aplikasi</Link>
         </nav>
         <small className="site-copyright">2026 Noisette Patissier</small>
       </footer>

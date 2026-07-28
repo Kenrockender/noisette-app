@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import Icon from "./Icon";
 import { rp, dayLabel } from "@/lib/format";
 
@@ -535,6 +536,9 @@ export default function AccountSheet({ customer, onClose, onSignedIn, onSignedOu
             )}
 
             <button type="button" className="btn ghost" onClick={signOut}>Keluar</button>
+            <Link href="/order/install" className="linkbtn acct-install-link">
+              Pasang aplikasi order ke layar utama
+            </Link>
           </>
         ) : step === "phone" ? (
           <>
