@@ -1,5 +1,6 @@
 import { Cormorant_Garamond, Jost } from "next/font/google";
 import "./globals.css";
+import RegisterSiteSW from "@/components/RegisterSiteSW";
 
 // Self-hosted by next/font, so there is no render-blocking request to Google and
 // no flash of unstyled text. Both faces are exposed as CSS vars for globals.css.
@@ -26,6 +27,19 @@ export const metadata = {
   },
   description:
     "A small patisserie on Jalan Bondowoso. Everything is baked the morning you collect it, so the numbers are small and the day sells out.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Noisette",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 export const viewport = {
@@ -53,6 +67,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
+        <RegisterSiteSW />
         <a className="skip-link" href="#main">
           Skip to content
         </a>

@@ -332,6 +332,42 @@ CREATE TABLE wholesale_applications (
 );
 CREATE INDEX idx_wholesale_applications_status ON wholesale_applications (status, submitted_at);
 
+-- Hampers custom orders. Requested by ci Ariel as its own flow, deliberately
+-- NOT the bespoke enquiry -> quote -> deposit pipeline: a hampers order has no
+-- quote stage and no weekly capacity, because ci Ariel recaps every request
+-- by hand and only opens WhatsApp herself once, to chase payment. `paid` is
+-- the one flag that pipeline needs, flipped from the counter once money
+-- lands. Mirrors `commissions` in shape (guest-first, one form, one contact),
+-- not in status flow.
+--
+-- `budget_idr` is unused by the app since 2026-07-27 (dropped from the form
+-- when ci Ariel asked for per-recipient address + card instead) but kept
+-- rather than dropped, to avoid a destructive column drop on a live table.
+--
+-- `recipients` is a JSONB array of {address, cardFrom, cardTo}, one entry per
+-- hamper being sent out — a single request is often several hampers to
+-- several addresses (e.g. 5 hampers for 5 recipients), each with its own
+-- card, so this is a list rather than flat columns. Sanitized shape only
+-- (see lib/hampers/*.js); no relational table since nothing ever queries a
+-- recipient on its own.
+CREATE TABLE hampers_orders (
+  id            BIGSERIAL PRIMARY KEY,
+  customer_id   BIGINT REFERENCES customers(id),
+  whatsapp      TEXT NOT NULL,
+  name          TEXT NOT NULL DEFAULT '',
+  contents      TEXT NOT NULL,
+  qty           INTEGER NOT NULL CHECK (qty > 0),
+  needed_on     DATE NOT NULL,
+  budget_idr    INTEGER CHECK (budget_idr >= 0),
+  notes         TEXT,
+  recipients    JSONB NOT NULL DEFAULT '[]'::jsonb,
+  paid          BOOLEAN NOT NULL DEFAULT FALSE,
+  paid_at       TIMESTAMPTZ,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_hampers_needed ON hampers_orders (needed_on);
+CREATE INDEX idx_hampers_paid ON hampers_orders (paid, created_at);
+
 -- Staff sessions for the counter PIN (lib/staff.js). One shared tablet today,
 -- so a session is a token and a shift-length expiry, no per-person identity yet.
 -- Store only the hash, same reasoning as auth_codes and customer sessions.

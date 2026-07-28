@@ -64,8 +64,9 @@ export default function CafeMenuPage() {
           </h1>
           <p className="lede">
             Pastry, slice cake, dan minuman yang kami buat harian di kedai.
-            Pesan langsung di tempat atau lewat WhatsApp kafe. Whole cake dan
-            hampers pemesanannya terpisah.
+            Pesan langsung di tempat atau lewat WhatsApp kafe. Whole cake
+            pemesanannya lewat WhatsApp yang berbeda, dan hampers custom
+            punya <Link href="/hampers">formulir sendiri</Link>.
           </p>
 
           <div className="cafe-menu">
@@ -93,8 +94,9 @@ export default function CafeMenuPage() {
           <div className="showcase-note">
             <p>
               Harganya menyusul — untuk sekarang tanya langsung lewat WhatsApp
-              kafe untuk harga dan ketersediaan hari ini. Untuk whole cake dan
-              hampers, pemesanannya lewat WhatsApp yang berbeda.
+              kafe untuk harga dan ketersediaan hari ini. Untuk whole cake,
+              pemesanannya lewat WhatsApp yang berbeda. Untuk hampers custom,
+              isi <Link href="/hampers">formulir permintaan</Link>.
             </p>
             <a
               href={waLink("Halo, aku mau tanya menu kafe Noisette")}

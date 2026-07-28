@@ -1,4 +1,5 @@
 import OrderApp from "@/components/OrderApp";
+import RegisterOrderSW from "@/components/RegisterOrderSW";
 import { getProducts, getAvailability } from "@/lib/store";
 import { allProductStats } from "@/lib/reviews";
 
@@ -9,6 +10,19 @@ export const metadata = {
   // The ordering app is a tool, not a page we want ranked. The website at / is
   // the thing that should show up in search.
   robots: { index: false, follow: true },
+  manifest: "/order/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Noisette",
+  },
+  icons: {
+    icon: [
+      { url: "/order/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/order/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/order/icons/apple-touch-icon.png",
+  },
 };
 
 // Real-time stock: this page renders per request, so the first paint carries the
@@ -26,5 +40,10 @@ export default async function OrderPage() {
   const products = getProducts();
   const stats = await allProductStats();
 
-  return <OrderApp initialProducts={products} initialAvail={avail} initialStats={stats} />;
+  return (
+    <>
+      <RegisterOrderSW />
+      <OrderApp initialProducts={products} initialAvail={avail} initialStats={stats} />
+    </>
+  );
 }

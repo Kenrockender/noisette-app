@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Icon from "./Icon";
 import ThemeToggle from "./ThemeToggle";
@@ -25,6 +25,7 @@ const TABS = [
   { id: "wholesale", label: "Wholesale" },
   { id: "reviews", label: "Ulasan" },
   { id: "bespoke", label: "Bespoke" },
+  { id: "hampers", label: "Hampers" },
   { id: "outbox", label: "Outbox" },
 ];
 
@@ -55,6 +56,16 @@ const NEXT_LABEL = { paid: "Mulai siapkan", preparing: "Tandai siap", ready: "Se
 
 /** "08:00-10:00" from the API becomes "08.00–10.00" on screen. */
 const slotLabel = (t) => (t || "").replace(/:/g, ".").replace("-", "–");
+
+/** WhatsApp numbers appearing on more than one hampers request — the signal
+ * a customer (or a double-tap on submit) sent the same request twice. Not
+ * enforced at submission: two genuine customers, or one customer with two
+ * separate hampers, can legitimately share a number and a date. */
+function duplicateHamperWa(orders) {
+  const counts = {};
+  for (const o of orders) counts[o.whatsapp] = (counts[o.whatsapp] || 0) + 1;
+  return new Set(Object.keys(counts).filter((wa) => counts[wa] > 1));
+}
 
 const WEEKDAYS_ID = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 
@@ -152,6 +163,130 @@ function QuoteForm({ busy, onQuote }) {
   );
 }
 
+/** Inline edit for one hampers request. Every field the form itself takes,
+ * since ci Ariel's WhatsApp call with the customer is what actually settles
+ * contents, qty, date and budget — the form submission is only a first draft. */
+const emptyHamperRecipient = () => ({ address: "", cardFrom: "", cardTo: "" });
+
+function HamperEditForm({ order, busy, onSave, onCancel }) {
+  const [name, setName] = useState(order.name);
+  const [wa, setWa] = useState(order.whatsapp);
+  const [contents, setContents] = useState(order.contents);
+  const [qty, setQty] = useState(String(order.qty));
+  const [neededOn, setNeededOn] = useState(order.neededOn);
+  const [notes, setNotes] = useState(order.notes ?? "");
+  const [recipients, setRecipients] = useState(order.recipients?.length ? order.recipients : []);
+
+  const updateRecipient = (i, field, value) => {
+    setRecipients((rs) => rs.map((r, idx) => (idx === i ? { ...r, [field]: value } : r)));
+  };
+  const removeRecipient = (i) => setRecipients((rs) => rs.filter((_, idx) => idx !== i));
+
+  const dirty =
+    name !== order.name ||
+    wa !== order.whatsapp ||
+    contents !== order.contents ||
+    qty !== String(order.qty) ||
+    neededOn !== order.neededOn ||
+    (notes || "") !== (order.notes || "") ||
+    JSON.stringify(recipients) !== JSON.stringify(order.recipients ?? []);
+
+  return (
+    <div className="hamperedit">
+      <div className="field">
+        <label htmlFor={`he-name-${order.id}`}>Nama</label>
+        <input id={`he-name-${order.id}`} value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+      <div className="field">
+        <label htmlFor={`he-wa-${order.id}`}>WhatsApp</label>
+        <input id={`he-wa-${order.id}`} value={wa} onChange={(e) => setWa(e.target.value)} />
+      </div>
+      <div className="field">
+        <label htmlFor={`he-contents-${order.id}`}>Tipe hampers</label>
+        <textarea
+          id={`he-contents-${order.id}`}
+          className="revtext"
+          rows={3}
+          maxLength={2000}
+          value={contents}
+          onChange={(e) => setContents(e.target.value)}
+        />
+      </div>
+      <div className="bespoke-row">
+        <div className="field">
+          <label htmlFor={`he-date-${order.id}`}>Dibutuhkan tanggal</label>
+          <input id={`he-date-${order.id}`} type="date" value={neededOn} onChange={(e) => setNeededOn(e.target.value)} />
+        </div>
+        <div className="field">
+          <label htmlFor={`he-qty-${order.id}`}>Jumlah</label>
+          <input id={`he-qty-${order.id}`} type="number" min={1} inputMode="numeric" value={qty} onChange={(e) => setQty(e.target.value)} />
+        </div>
+      </div>
+      <div className="field">
+        <label htmlFor={`he-notes-${order.id}`}>Catatan (opsional)</label>
+        <input id={`he-notes-${order.id}`} value={notes} onChange={(e) => setNotes(e.target.value)} />
+      </div>
+
+      <div className="hamper-recipients">
+        <p className="hamper-recipients-label">Alamat &amp; kartu ucapan</p>
+        {recipients.map((r, i) => (
+          <div key={i} className="hamper-recipient">
+            <div className="field">
+              <label htmlFor={`he-addr-${order.id}-${i}`} className="sr-only">Alamat pengiriman</label>
+              <input
+                id={`he-addr-${order.id}-${i}`}
+                value={r.address}
+                onChange={(e) => updateRecipient(i, "address", e.target.value)}
+                placeholder="Alamat pengiriman"
+              />
+            </div>
+            <div className="bespoke-row">
+              <div className="field">
+                <label htmlFor={`he-from-${order.id}-${i}`} className="sr-only">Card dari</label>
+                <input
+                  id={`he-from-${order.id}-${i}`}
+                  value={r.cardFrom}
+                  onChange={(e) => updateRecipient(i, "cardFrom", e.target.value)}
+                  placeholder="Card dari"
+                />
+              </div>
+              <div className="field">
+                <label htmlFor={`he-to-${order.id}-${i}`} className="sr-only">Card untuk</label>
+                <input
+                  id={`he-to-${order.id}-${i}`}
+                  value={r.cardTo}
+                  onChange={(e) => updateRecipient(i, "cardTo", e.target.value)}
+                  placeholder="Card untuk"
+                />
+              </div>
+            </div>
+            <button type="button" className="btn btn-sm ghost" onClick={() => removeRecipient(i)}>
+              Hapus alamat ini
+            </button>
+          </div>
+        ))}
+        <button type="button" className="btn btn-sm ghost" onClick={() => setRecipients((rs) => [...rs, emptyHamperRecipient()])}>
+          + Tambah alamat &amp; kartu
+        </button>
+      </div>
+
+      <div className="approw-btns">
+        <button
+          type="button"
+          className="btn btn-sm"
+          disabled={busy || !dirty || !name.trim() || !wa.trim() || !contents.trim() || !neededOn}
+          onClick={() => onSave({ name, whatsapp: wa, contents, qty, neededOn, notes, recipients })}
+        >
+          Simpan
+        </button>
+        <button type="button" className="btn btn-sm ghost" disabled={busy} onClick={onCancel}>
+          Batal
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminDash() {
   const [day, setDay] = useState(null);
   const [tab, setTab] = useState("fulfil");
@@ -167,6 +302,9 @@ export default function AdminDash() {
   const [pin, setPin] = useState("");
   const [dl, setDl] = useState(null); // wholesale delivery run for the day
   const [bk, setBk] = useState(null); // bespoke commissions pipeline
+  const [hp, setHp] = useState(null); // hampers requests
+  const [editingHamperId, setEditingHamperId] = useState(null);
+  const [deletingHamperId, setDeletingHamperId] = useState(null); // hamper id pending delete confirm
   const [clock, setClock] = useState(() => new Date()); // the header clock
   const dateRef = useRef(null);
 
@@ -278,6 +416,11 @@ export default function AdminDash() {
   }, []);
   useEffect(() => { if (tab === "bespoke" && authed) loadBk(); }, [tab, authed, loadBk]);
 
+  const loadHp = useCallback(() => {
+    return fetch("/api/admin/hampers").then((r) => r.json()).then(setHp);
+  }, []);
+  useEffect(() => { if (tab === "hampers" && authed) loadHp(); }, [tab, authed, loadHp]);
+
   const patchCommission = async (body, failMsg) => {
     setBusy(true);
     setErr("");
@@ -301,6 +444,172 @@ export default function AdminDash() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const setHamperPaid = async (id, paid) => {
+    setBusy(true);
+    setErr("");
+    try {
+      const res = await fetch("/api/admin/hampers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, paid }),
+      });
+      if (!res.ok) setErr("Status bayar itu belum tersimpan.");
+      await loadHp();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveHamperEdit = async (id, edit) => {
+    setBusy(true);
+    setErr("");
+    try {
+      const res = await fetch("/api/admin/hampers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, edit }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        if (d.error === "invalid_number") setErr("Nomor WhatsApp-nya sepertinya salah.");
+        else if (d.error === "invalid_date") setErr("Tanggalnya tidak valid.");
+        else setErr("Perubahan itu belum tersimpan.");
+        return;
+      }
+      setEditingHamperId(null);
+      await loadHp();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const removeHamper = async (id) => {
+    setBusy(true);
+    setErr("");
+    try {
+      const res = await fetch(`/api/admin/hampers?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (!res.ok) setErr("Permintaan itu belum terhapus.");
+      else setDeletingHamperId(null);
+      await loadHp();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // "1) Jl. A (dari Budi untuk Sinta) || 2) Jl. B (...)" — one cell per
+  // request, since the sheet stays one row per request, not one per hamper.
+  const recipientsText = (recipients) =>
+    (recipients ?? [])
+      .map((r, i) => {
+        const card = r.cardFrom || r.cardTo ? ` (dari ${r.cardFrom || "-"} untuk ${r.cardTo || "-"})` : "";
+        return `${i + 1}) ${r.address || "-"}${card}`;
+      })
+      .join(" || ");
+
+  // Soonest-needed first, so ci Ariel's recap reads in the order she has to act on it.
+  const sortedHamperOrders = [...(hp?.orders ?? [])].sort((a, b) => a.neededOn.localeCompare(b.neededOn));
+
+  // Excel recap ci Ariel asked for: one row per request, opened in Excel —
+  // styled like a real recap (header band, zebra rows, paid/unpaid color)
+  // rather than a bare data dump.
+  const downloadHampersXlsx = async () => {
+    const ExcelJS = (await import("exceljs")).default;
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Noisette Patissier";
+    wb.created = new Date();
+
+    const sheet = wb.addWorksheet("Hampers", {
+      views: [{ state: "frozen", ySplit: 3 }],
+      pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1 },
+    });
+
+    const ESPRESSO = "FF2A1B10";
+    const GOLD = "FFC98B2D";
+    const CREAM = "FFF8F2E6";
+    const LINE = "FFE6DAC3";
+    const PAID = "FFDCEEDD";
+    const PAID_TEXT = "FF1E6B2E";
+    const UNPAID = "FFF7DFDA";
+    const UNPAID_TEXT = "FFB3391F";
+
+    const columns = [
+      { header: "ID", key: "id", width: 10 },
+      { header: "Nama", key: "name", width: 20 },
+      { header: "WhatsApp", key: "whatsapp", width: 16 },
+      { header: "Tipe Hampers", key: "contents", width: 18 },
+      { header: "Jumlah", key: "qty", width: 9 },
+      { header: "Dibutuhkan", key: "neededOn", width: 20 },
+      { header: "Alamat & Kartu Ucapan", key: "recipients", width: 42 },
+      { header: "Catatan", key: "notes", width: 28 },
+      { header: "Status Bayar", key: "paid", width: 14 },
+    ];
+    sheet.columns = columns;
+
+    // Title band above the header, merged across every column.
+    sheet.mergeCells(1, 1, 1, columns.length);
+    const title = sheet.getCell(1, 1);
+    title.value = "Rekap Hampers — Noisette Patissier";
+    title.font = { name: "Calibri", size: 15, bold: true, color: { argb: CREAM } };
+    title.alignment = { vertical: "middle", horizontal: "left" };
+    title.fill = { type: "pattern", pattern: "solid", fgColor: { argb: ESPRESSO } };
+    sheet.getRow(1).height = 28;
+
+    sheet.mergeCells(2, 1, 2, columns.length);
+    const subtitle = sheet.getCell(2, 1);
+    const generatedAt = new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    subtitle.value = `${sortedHamperOrders.length} permintaan · diunduh ${generatedAt}`;
+    subtitle.font = { name: "Calibri", size: 10, italic: true, color: { argb: GOLD } };
+    subtitle.alignment = { vertical: "middle", horizontal: "left" };
+    subtitle.fill = { type: "pattern", pattern: "solid", fgColor: { argb: ESPRESSO } };
+    sheet.getRow(2).height = 18;
+
+    const headerRow = sheet.getRow(3);
+    headerRow.values = columns.map((c) => c.header);
+    headerRow.height = 22;
+    headerRow.eachCell((cell) => {
+      cell.font = { name: "Calibri", size: 11, bold: true, color: { argb: CREAM } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: ESPRESSO } };
+      cell.alignment = { vertical: "middle", horizontal: "left" };
+      cell.border = { bottom: { style: "thin", color: { argb: GOLD } } };
+    });
+
+    sortedHamperOrders.forEach((o, i) => {
+      const row = sheet.addRow({
+        id: o.id,
+        name: o.name,
+        whatsapp: o.whatsapp,
+        contents: o.contents,
+        qty: o.qty,
+        neededOn: new Date(`${o.neededOn}T00:00:00`),
+        recipients: recipientsText(o.recipients) || "-",
+        notes: o.notes || "-",
+        paid: o.paid ? "Lunas" : "Belum bayar",
+      });
+      row.getCell("neededOn").numFmt = "dddd, d mmm yyyy";
+      row.eachCell((cell, colNumber) => {
+        cell.font = { name: "Calibri", size: 10.5 };
+        cell.alignment = { vertical: "top", wrapText: colNumber === 7 || colNumber === 8 };
+        cell.border = { bottom: { style: "thin", color: { argb: LINE } } };
+        if (i % 2 === 1) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: CREAM } };
+      });
+      const statusCell = row.getCell("paid");
+      statusCell.font = { name: "Calibri", size: 10.5, bold: true, color: { argb: o.paid ? PAID_TEXT : UNPAID_TEXT } };
+      statusCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: o.paid ? PAID : UNPAID } };
+      statusCell.alignment = { vertical: "middle", horizontal: "center" };
+    });
+
+    sheet.autoFilter = { from: { row: 3, column: 1 }, to: { row: 3, column: columns.length } };
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `hampers-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const decideReview = async (id, publish) => {
@@ -1077,6 +1386,95 @@ export default function AdminDash() {
                     </div>
                   </li>
                 ))}
+              </ul>
+            )}
+          </section>
+        )}
+
+        {tab === "hampers" && (
+          <section role="tabpanel" id="panel-hampers" aria-labelledby="tab-hampers">
+            <p className="admin-hint">
+              Hampers custom tidak punya alokasi harian atau kapasitas
+              minggu — cuma permintaan dan satu status: sudah bayar atau
+              belum. Ci Ariel menghubungi lewat WhatsApp sendiri untuk
+              konfirmasi isi dan pembayaran; centang di sini setelah
+              uangnya masuk.
+            </p>
+
+            <button
+              type="button"
+              className="btn btn-sm ghost"
+              disabled={!hp?.orders?.length}
+              onClick={downloadHampersXlsx}
+            >
+              Unduh rekap Excel
+            </button>
+
+            {hp === null && <p className="admin-empty">Memuat</p>}
+            {hp?.orders.length === 0 && <p className="admin-empty">Belum ada permintaan hampers.</p>}
+            {hp?.orders.length > 0 && (
+              <ul className="applist">
+                {sortedHamperOrders.map((o) => {
+                  const dupe = duplicateHamperWa(hp.orders).has(o.whatsapp);
+                  const editing = editingHamperId === o.id;
+                  const deleting = deletingHamperId === o.id;
+                  return (
+                    <li key={o.id} className={`approw ${o.paid ? "approw-done" : ""}`}>
+                      <div className="approw-who">
+                        <b>
+                          {o.name}{" "}
+                          <span className={`pill ${o.paid ? "pill-paid" : "pill-out"}`}>{o.paid ? "Lunas" : "Belum bayar"}</span>
+                          {dupe && <span className="pill pill-out">Kemungkinan dobel</span>}
+                        </b>
+                        <small>
+                          {dayLabel(o.neededOn)} · {o.qty}x · {o.whatsapp} · {o.id}
+                          <br />&ldquo;{o.contents}&rdquo;
+                          {o.notes ? <><br />{o.notes}</> : null}
+                          {(o.recipients ?? []).map((r, i) => (
+                            <Fragment key={i}>
+                              <br />
+                              {i + 1}) {r.address || "-"}
+                              {(r.cardFrom || r.cardTo) ? ` (dari ${r.cardFrom || "-"} untuk ${r.cardTo || "-"})` : ""}
+                            </Fragment>
+                          ))}
+                        </small>
+                      </div>
+
+                      {editing ? (
+                        <HamperEditForm
+                          order={o}
+                          busy={busy}
+                          onSave={(edit) => saveHamperEdit(o.id, edit)}
+                          onCancel={() => setEditingHamperId(null)}
+                        />
+                      ) : deleting ? (
+                        <div className="ticket-cancel-confirm">
+                          <p className="micro">Hapus permintaan {o.id}?</p>
+                          <div className="approw-btns">
+                            <button type="button" className="btn btn-sm ghost" onClick={() => setDeletingHamperId(null)}>
+                              Biarkan
+                            </button>
+                            <button type="button" className="btn btn-sm" disabled={busy} onClick={() => removeHamper(o.id)}>
+                              Ya, hapus
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="approw-btns approw-btns-col">
+                          <button type="button" className="btn btn-sm" disabled={busy} onClick={() => setHamperPaid(o.id, !o.paid)}>
+                            {o.paid ? "Tandai belum bayar" : "Tandai lunas"}
+                          </button>
+                          <button type="button" className="btn btn-sm ghost" disabled={busy} onClick={() => setEditingHamperId(o.id)}>
+                            Edit
+                          </button>
+                          <button type="button" className="btn btn-sm ghost" disabled={busy} onClick={() => setDeletingHamperId(o.id)}>
+                            Hapus
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>

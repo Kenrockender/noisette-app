@@ -238,6 +238,11 @@ export default function LandingPage() {
                 Kirim brief —{" "}
                 <Link href="/bespoke">mulai di sini</Link>
               </dd>
+              <dt>Hampers custom</dt>
+              <dd>
+                Ceritakan isinya —{" "}
+                <Link href="/hampers">mulai di sini</Link>
+              </dd>
             </dl>
             <a
               className="site-maplink"
@@ -270,6 +275,7 @@ export default function LandingPage() {
           <Link href="/cafe">Menu kafe</Link>
           <Link href="/wholesale">Wholesale</Link>
           <Link href="/bespoke">Bespoke</Link>
+          <Link href="/hampers">Hampers</Link>
           <Link href="/admin">Konter</Link>
         </nav>
         <small className="site-copyright">2026 Noisette Patissier</small>

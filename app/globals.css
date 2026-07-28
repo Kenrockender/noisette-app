@@ -1663,7 +1663,8 @@ a {
 .field {
   margin-bottom: 12px;
 }
-.field label:not(.sr-only) {
+.field label:not(.sr-only),
+.field-label-static {
   display: block;
   font-size: 11px;
   letter-spacing: 0.16em;
@@ -3249,6 +3250,41 @@ a {
 .approw-done {
   opacity: 0.55;
 }
+/* Edit form / delete confirm reused inside .approw's flex-wrap row: both drop
+   to their own full-width line under .approw-who instead of squeezing beside it. */
+.approw .hamperedit,
+.approw .ticket-cancel-confirm {
+  flex: 1 1 100%;
+}
+.hamperedit {
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.hamperedit .field {
+  margin-bottom: 10px;
+}
+.hamper-recipients {
+  margin-bottom: 14px;
+}
+.hamper-recipients-label {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--espresso2);
+  margin-bottom: 7px;
+}
+.hamper-recipient {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.hamper-recipient .field {
+  margin-bottom: 10px;
+}
+.hamper-recipient .field:last-child {
+  margin-bottom: 0;
+}
 
 /* ---- the portal's skips and invoices ---- */
 .ws-delivery {
@@ -3424,6 +3460,36 @@ a {
 }
 .bespoke-form .field {
   margin-bottom: 14px;
+}
+.hamper-type-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.hamper-type-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tap);
+  padding: 10px 16px;
+  border: 1px solid var(--muted2);
+  border-radius: 24px;
+  background: var(--surface);
+  color: var(--espresso);
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.15s ease-out, border-color 0.15s ease-out, color 0.15s ease-out;
+}
+.hamper-type-chip.on {
+  background: var(--espresso);
+  border-color: var(--espresso);
+  color: var(--cream);
+}
+.hamper-type-hint {
+  margin-top: 7px;
+  font-size: 12.5px;
+  color: var(--faint);
 }
 .bespoke-row {
   display: grid;

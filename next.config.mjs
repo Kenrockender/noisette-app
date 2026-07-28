@@ -29,7 +29,25 @@ const securityHeaders = [
 
 const nextConfig = {
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      {
+        // admin-sw.js is served from the root but must only ever control /admin.
+        // This header is what lets a root-level file claim a narrower scope.
+        source: "/admin-sw.js",
+        headers: [
+          { key: "Service-Worker-Allowed", value: "/admin" },
+          { key: "Cache-Control", value: "no-cache" },
+        ],
+      },
+      {
+        source: "/order-sw.js",
+        headers: [
+          { key: "Service-Worker-Allowed", value: "/order" },
+          { key: "Cache-Control", value: "no-cache" },
+        ],
+      },
+    ];
   },
   async redirects() {
     return [
