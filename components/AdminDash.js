@@ -1422,17 +1422,9 @@ export default function AdminDash() {
 
         {tab === "hampers" && (
           <section role="tabpanel" id="panel-hampers" aria-labelledby="tab-hampers">
-            <p className="admin-hint">
-              Hampers custom tidak punya alokasi harian atau kapasitas
-              minggu — cuma permintaan dan satu status: sudah bayar atau
-              belum. Ci Ariel menghubungi lewat WhatsApp sendiri untuk
-              konfirmasi isi dan pembayaran; centang di sini setelah
-              uangnya masuk.
-            </p>
-
             <button
               type="button"
-              className="btn btn-sm ghost"
+              className="btn btn-sm ghost hampers-export-btn"
               disabled={!hp?.orders?.length}
               onClick={downloadHampersXlsx}
             >
