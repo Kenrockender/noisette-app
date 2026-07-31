@@ -340,8 +340,9 @@ export default function AdminDash() {
 
   useEffect(() => { if (authed) load(); }, [authed, load]);
 
-  // The delivery run follows the trading day. Re-fetched whenever the day is,
-  // so the 15-second fulfillment poll keeps it honest too.
+  // The delivery run follows the trading day. Re-fetched whenever `day`
+  // changes, so every fulfillment-tab push (see the stream effect below)
+  // keeps this honest too, not just an explicit date switch.
   useEffect(() => {
     if (!authed || !day?.date) return;
     fetch(`/api/admin/deliveries?date=${day.date}`)
@@ -688,12 +689,35 @@ export default function AdminDash() {
     }
   };
 
-  // The pass needs to see new orders without anyone thinking to refresh.
+  // The pass needs to see new orders without anyone thinking to refresh. Push,
+  // not poll: /api/admin/day/stream sends a fresh snapshot the moment a write
+  // happens anywhere (see lib/adminEvents.js), instead of every open tablet
+  // re-querying the store on its own 15-second timer regardless of whether
+  // anything changed. EventSource retries the connection on its own if it
+  // drops; onerror here only handles the case that matters beyond that — the
+  // staff session itself expired, so retrying the same request forever would
+  // just keep hitting 401.
   useEffect(() => {
-    if (tab !== "fulfil") return;
-    const iv = setInterval(() => load(), 15000);
-    return () => clearInterval(iv);
-  }, [tab, load]);
+    if (tab !== "fulfil" || !authed || !day?.date) return;
+    const es = new EventSource(`/api/admin/day/stream?date=${day.date}`);
+    es.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        dateRef.current = data.date;
+        setDay(data);
+      } catch {
+        // A malformed push is skipped; the next one (or the stream's own
+        // heartbeat) carries the real update.
+      }
+    };
+    es.onerror = () => {
+      fetch("/api/staff/session")
+        .then((r) => r.json())
+        .then((d) => { if (!d.authed) setAuthed(false); })
+        .catch(() => {});
+    };
+    return () => es.close();
+  }, [tab, authed, day?.date]);
 
   if (authed === null) {
     return (

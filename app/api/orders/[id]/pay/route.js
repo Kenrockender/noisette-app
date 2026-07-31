@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { simulateProviderPayment } from "@/lib/payments";
+import { notifyAdminDay } from "@/lib/adminEvents";
 
 export const dynamic = "force-dynamic";
 
@@ -17,5 +18,6 @@ export async function POST(_req, { params }) {
     const status = result.error === "not_found" ? 404 : 409;
     return NextResponse.json(result, { status });
   }
+  notifyAdminDay(result.order.pickupDate);
   return NextResponse.json({ order: result.order });
 }

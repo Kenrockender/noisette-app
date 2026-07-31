@@ -1,5 +1,6 @@
 import { setAllocation } from "@/lib/store";
 import { requireStaff } from "@/lib/staff";
+import { notifyAdminDay } from "@/lib/adminEvents";
 
 export const dynamic = "force-dynamic";
 
@@ -34,5 +35,6 @@ export async function PATCH(request) {
     const status = res.error === "below_committed" ? 409 : 400;
     return Response.json(res, { status });
   }
+  notifyAdminDay(date);
   return Response.json(res);
 }

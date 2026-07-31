@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createOrder } from "@/lib/store";
 import { createInvoice } from "@/lib/payments";
 import { readSession, SESSION_COOKIE } from "@/lib/auth";
+import { notifyAdminDay } from "@/lib/adminEvents";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,8 @@ export async function POST(req) {
     const status = ["insufficient_stock", "slot_full", "hold_expired"].includes(result.error) ? 409 : 400;
     return NextResponse.json(result, { status });
   }
+
+  notifyAdminDay(result.order.pickupDate);
 
   // The provider invoice is created with the order, exactly as it will be with
   // Xendit/Midtrans. Its window is the stock hold's window; one clock, not two.

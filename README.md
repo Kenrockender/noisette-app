@@ -23,33 +23,69 @@ same allocation model. Its bespoke commissions do not, and that matters:
 `house` is the top filter in the ordering app, above category, because which
 kitchen you are buying from is a bigger question than which shelf.
 
-## Three products, one repo
+## Three products, one repo (plus a fourth, at the counter)
 
 This is the thing to understand before changing anything here.
 
 **The website (`/`)** introduces the bakery to someone who has never been: what
 we make, why the numbers are small, where we are, when we are open. Wide
 editorial layout, serif display type, French section names, no checkout. Every
-CTA hands the visitor to the app.
+CTA hands the visitor to WhatsApp today — see "Where `/pre-order` fits" below
+for why it isn't the app instead.
 
-**The app (`/order`)** assumes you already know all of that. No hero, no story,
-no address block. It is a tool: pick a day, pick pastries, pick a window, pay,
-get a code. Narrow, dense, sticky chrome, plain sentence-case copy.
+**The pre-order app (`/pre-order`)** assumes you already know all of that. No
+hero, no story, no address block. It is a tool: pick a day, pick pastries,
+pick a window, pay, get a code. Narrow, dense, sticky chrome, plain
+sentence-case copy.
 
 **The counter (`/admin`)** counts what the other two did. Daily allocations,
 slot capacity, and the fulfillment hub. Tabular, tablet-sized, no serif and no
 photography anywhere in it. The fulfillment buttons are oversized because staff
 hit them with flour on their hands.
 
+**The walk-in menu (`/order`)**, added later, is a fourth thing: staff tooling
+like `/admin`, just shaped like a menu instead of a table. A customer standing
+at the counter right now, not a pre-order for tomorrow, rung up and handed
+over in the same motion through the same anti-oversell path. It only ever
+touches today's stock; the pre-order horizon starts tomorrow, so the two can
+never compete for the same croissant.
+
 They share brand tokens and a few primitives in `app/globals.css`. They share no
 layout. The `.site-`, `.app-` and `.admin-` prefixes keep the lines visible. If a
 `.site-` rule starts being useful inside the app, that usually means the bakery
 is being introduced twice.
 
-The date rail at the top of the catalog is the app's one structural opinion.
-Stock is allocated per day, so "4 left" means nothing until you know which day.
-Picking the day first makes the number on every card true for the order you are
-actually placing.
+The date rail at the top of the catalog is the pre-order app's one structural
+opinion. Stock is allocated per day, so "4 left" means nothing until you know
+which day. Picking the day first makes the number on every card true for the
+order you are actually placing.
+
+## Where `/pre-order` fits
+
+The website and the pre-order platform (`/pre-order`, `/order`, `/admin`,
+`/wholesale`) run on two different catalogs, on purpose. `/` shows the shop's
+real whole-cake and cafe menu (`lib/site-cakes.js`, `lib/cafe-menu.js`) and
+hands every order to WhatsApp, because that is how the business actually takes
+orders today. The pre-order platform runs on a separate, code-defined catalog
+(`lib/store/catalog.js`) built to prove out the harder problem underneath a
+real ordering flow: anti-oversell held under concurrency, real accounts, a
+staffed fulfillment pipeline.
+
+**The direction is for `/pre-order` to become the real retail ordering flow**,
+replacing WhatsApp checkout for retail — it is not a permanent demo, and
+nothing about it is on hold by choice. It stays unlinked from the website for
+two concrete reasons, not because the plan changed:
+
+1. The catalog is placeholder data (pistachio croissants, not Noisette's real
+   SKUs and prices).
+2. `lib/payments.js` is a simulated provider; see "From demo to production"
+   below for the real Postgres/Redis/payment-provider cutover this needs.
+
+Everything else — the OTP accounts, the staff PIN, the oversell guard, the
+fulfillment pipeline — is already built to the same bar as the rest of this
+README, and `node --test` covers the business logic today. Swapping in the
+real catalog and a real payment provider is what turns this from "the platform
+this business could run on" into "the platform it does run on."
 
 ## Run it
 
@@ -173,15 +209,28 @@ placeholders. They are the right shape and the wrong pastry. See
 
 ## From demo to production
 
-Data lives in an in-memory store (`lib/store.js`). Its function interface,
-`getAvailability`, `createOrder`, `markPaid` and `expireHolds`, is the contract
-to keep. To go live:
+With nothing configured, data lives in an in-memory store (`lib/store.js` and
+its siblings), which is what a bare checkout and `node --test` run on. Setting
+`DATABASE_URL` (and, separately, the Upstash Redis vars) switches the matching
+subsystem to durable, shared storage — see `lib/db/backend.js` and
+`.env.example`. To go live:
 
-1. **PostgreSQL.** Apply `db/schema.sql` on Supabase or Neon and replace the Maps
-   in `lib/store.js` with queries. The `CHECK (sold_count + held_count <=
-   total_allocated)` constraint is the database-level oversell guard.
-2. **Redis.** Move the hot counters (stock holds, slot bookings) to Redis with
-   `DECRBY`, keeping Postgres as source of truth via async write-back (BullMQ).
+1. **PostgreSQL — built, and verified against a real Postgres.** `db/schema.sql`
+   plus a full `lib/store/pg.js`-and-siblings adapter already exist for every
+   module (store, commissions, deliveries, notifications, reviews, reminders,
+   payments), chosen automatically by `hasPostgres()`. `npm run test:pg` proves
+   this: it runs the entire `node --test` suite against a real Postgres server
+   (PGlite, a WASM build of the actual database, not a mock) instead of the
+   in-memory path, and it is 28/28 green. What is left is provisioning: apply
+   `db/schema.sql` on Supabase or Neon, run `db/seed-products.mjs`, and set
+   `DATABASE_URL`. See `plan.md` item 5 for what the verification pass found
+   and fixed along the way.
+2. **Redis — built, not yet run against a real Redis.** `lib/db/redis.js` and
+   the Redis-backed paths in `lib/auth.js`/`lib/staff.js` (OTP, sessions, rate
+   limits) exist and fall back to in-memory the same way Postgres does. Unlike
+   Postgres this has not had an equivalent real-Redis verification pass yet —
+   Upstash's REST API does not have a PGlite-style local equivalent to test
+   against without provisioning the real thing.
 3. **Payments.** The seam is already in place (`lib/payments.js`): an invoice
    per order, and `/api/payments/webhook` verifying an HMAC signature before
    anything is marked paid. Going live means replacing `createInvoice` with the
@@ -196,9 +245,16 @@ to keep. To go live:
 6. **Staff auth.** Already in place (PIN, see Security). Set `STAFF_PIN`, and
    consider per-person accounts if the team outgrows one shared tablet.
 
-The counter polls `/api/admin/day` every 15 seconds while the fulfillment tab is
-open. That is fine against an in-memory store and wasteful against Postgres.
-Move it to SSE or websockets when the real database goes in.
+The counter's fulfillment tab no longer polls. `/api/admin/day/stream` (SSE)
+pushes a fresh snapshot the moment a write anywhere calls `notifyAdminDay` —
+an order, a walk-in sale, a fulfillment advance, an allocation or slot change
+(`lib/adminEvents.js`) — plus a 30-second heartbeat as a backstop for the one
+case push cannot cover on its own: a multi-instance deployment, where a write
+on one serverless instance never reaches a connection held open on another.
+That backstop is a real gap this in-process EventEmitter approach accepts
+rather than solves; closing it properly would need Redis pub/sub or a queue,
+which Upstash's REST-only client does not support cleanly. Fine for a single
+shop's counter today; worth revisiting if this ever runs multi-instance.
 
 ## The wholesale portal (Phase 2)
 
@@ -314,11 +370,15 @@ logic; run it with `npm test`.
 
 What remains is mostly production infrastructure rather than product:
 
-1. **PostgreSQL and Redis** replacing the in-memory store (see "From demo to
-   production" above). Everything here dies with the process.
+1. **Provisioning Postgres and Redis** (see "From demo to production" above).
+   The code for both is built and, for Postgres, verified against a real
+   database (`npm run test:pg`); with neither actually provisioned in a
+   deployment, everything still dies with the process.
 2. **The WhatsApp Business API** into `deliverWhatsapp` and `deliverOtp`, and
    a real worker for the queue. Both fail closed until then.
 3. **Xendit/Midtrans** behind `lib/payments.js`, keeping the webhook door.
 4. **Invoice documents and credit terms.** The numbers exist; the PDF and the
    "paid on net-30" bookkeeping do not.
-5. **SSE or websockets** for the counter, which still polls every 15 seconds.
+
+(SSE for the counter's fulfillment tab, formerly item 5 here, is done — see
+"From demo to production" above.)

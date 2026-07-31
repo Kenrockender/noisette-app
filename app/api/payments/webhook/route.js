@@ -1,6 +1,7 @@
 // Relative on purpose: node --test exercises this handler directly (see
 // test/routes.test.js) and node does not resolve the "@/" alias.
 import { handlePaymentCallback } from "../../../../lib/payments.js";
+import { notifyAdminDay } from "../../../../lib/adminEvents.js";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,8 @@ export async function POST(request) {
       : 400;
     return Response.json(res, { status });
   }
+  if (res.order) notifyAdminDay(res.order.pickupDate);
+
   // A retail callback resolves to an order; a bespoke deposit callback
   // resolves to a commission. Either way the provider gets its 200 — a thrown
   // TypeError here turned successful deposits into an infinite retry loop.

@@ -103,7 +103,7 @@ export default function OrderApp({ initialProducts = [], initialAvail = null, in
   useEffect(() => {
     // Server-rendered props already seed products, availability and stats, so the
     // catalog is on screen before this runs. Only fetch what the server did not
-    // hand us (e.g. if OrderApp is ever mounted without initial props).
+    // hand us (e.g. if PreOrderApp is ever mounted without initial props).
     if (!products.length) fetch("/api/products").then((r) => r.json()).then((d) => setProducts(d.products));
     if (!avail) loadAvail();
     if (!Object.keys(stats).length) fetch("/api/reviews?all=1").then((r) => r.json()).then((d) => setStats(d.stats || {})).catch(() => {});
@@ -112,10 +112,6 @@ export default function OrderApp({ initialProducts = [], initialAvail = null, in
       .then((r) => (r.status === 204 ? null : r.json()))
       .then((d) => d && setCustomer(d.customer))
       .catch(() => {});
-    // Deep links from the website: /order?p=dubai opens the product.
-    const q = new URLSearchParams(window.location.search);
-    const p = q.get("p");
-    if (p) { setPid(p); setQtyN(1); setView("product"); }
   }, []);
 
   // Signing in should fill the checkout in, not make you retype what we know.

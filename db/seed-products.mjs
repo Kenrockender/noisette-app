@@ -11,10 +11,11 @@
  */
 import { Client } from "pg";
 import { products } from "../lib/store/catalog.js";
+import { sslFor } from "../lib/db/pg.js";
 
 const client = new Client({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  ssl: sslFor(process.env.DATABASE_URL),
 });
 
 async function main() {

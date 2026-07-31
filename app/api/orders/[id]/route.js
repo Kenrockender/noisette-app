@@ -4,6 +4,7 @@ import { getOrder } from "@/lib/store";
 import { cancelAndRefundOrder } from "@/lib/payments";
 import { enqueueNotification } from "@/lib/notifications";
 import { readSession, SESSION_COOKIE } from "@/lib/auth";
+import { notifyAdminDay } from "@/lib/adminEvents";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,8 @@ export async function DELETE(_req, { params }) {
     const status = result.error === "not_found" ? 404 : 409;
     return NextResponse.json(result, { status });
   }
+
+  notifyAdminDay(result.order.pickupDate);
 
   enqueueNotification({
     to: result.order.customer.whatsapp,

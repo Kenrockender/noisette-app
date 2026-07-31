@@ -1,5 +1,6 @@
 import { createWalkinSale } from "@/lib/store";
 import { requireStaff } from "@/lib/staff";
+import { notifyAdminDay } from "@/lib/adminEvents";
 
 export const dynamic = "force-dynamic";
 
@@ -30,5 +31,6 @@ export async function POST(request) {
     const status = res.error === "insufficient_stock" ? 409 : 400;
     return Response.json(res, { status });
   }
+  notifyAdminDay(date);
   return Response.json(res);
 }

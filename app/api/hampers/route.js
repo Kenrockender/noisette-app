@@ -1,8 +1,19 @@
 import { currentCustomer } from "@/lib/session";
-import { submitHamper } from "@/lib/hampers";
+import { submitHamper, hampersFor } from "@/lib/hampers";
 import { enqueueNotification } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
+
+/** GET ?mine=1: this number's own hamper requests, session required. */
+export async function GET(request) {
+  const url = new URL(request.url);
+  if (!url.searchParams.get("mine"))
+    return Response.json({ error: "missing_params" }, { status: 400 });
+
+  const c = await currentCustomer();
+  if (!c) return Response.json({ error: "not_signed_in" }, { status: 401 });
+  return Response.json({ orders: await hampersFor(c.whatsapp) });
+}
 
 /**
  * POST { name, whatsapp, contents, qty, neededOn, notes, recipients }

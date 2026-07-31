@@ -2,6 +2,7 @@ import { advanceOrder } from "@/lib/store";
 import { cancelAndRefundOrder } from "@/lib/payments";
 import { enqueueNotification } from "@/lib/notifications";
 import { requireStaff } from "@/lib/staff";
+import { notifyAdminDay } from "@/lib/adminEvents";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,7 @@ export async function PATCH(request, { params }) {
     const status = res.error === "not_found" ? 404 : 409;
     return Response.json(res, { status });
   }
+  notifyAdminDay(res.order.pickupDate);
 
   // Queued, not sent. The stage has already advanced; a WhatsApp outage must
   // not un-advance it or error this request.
@@ -59,6 +61,7 @@ export async function DELETE(_req, { params }) {
     const status = result.error === "not_found" ? 404 : 409;
     return Response.json(result, { status });
   }
+  notifyAdminDay(result.order.pickupDate);
 
   enqueueNotification({
     to: result.order.customer.whatsapp,

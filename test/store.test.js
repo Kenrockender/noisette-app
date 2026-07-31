@@ -4,12 +4,12 @@ import {
   getAvailability,
   createOrder,
   markPaid,
-  getOrder,
   setAllocation,
   setSlotCapacity,
   saveStandingOrder,
   upsertCustomer,
   deleteStandingOrder,
+  _testExpireHoldNow,
 } from "../lib/store.js";
 
 /*
@@ -20,9 +20,21 @@ import {
  * because the in-memory adapter happens to return synchronously.
  */
 
-/** A pickup date that is guaranteed to be inside the open window. */
+/**
+ * A pickup date that is guaranteed to be inside the open window — deliberately
+ * the FARTHEST day in the rail, not the nearest. payments.test.js and
+ * routes.test.js both use the nearest day (dates[0]) at slotIndex 0. Against
+ * the in-memory backend that never collides, because each test file is its
+ * own process with its own fresh Maps; against a real, persistent Postgres
+ * (see scripts/verify-pg.mjs) all four test files share one actual database,
+ * so those two files alone fill slotIndex 0's default capacity of 8 before
+ * this file ever runs. Landing on a day nothing else touches removes the
+ * collision outright, rather than trying to keep three files' slot-capacity
+ * math in sync by hand.
+ */
 async function openDate() {
-  return (await getAvailability()).dates[0];
+  const { dates } = await getAvailability();
+  return dates[dates.length - 1];
 }
 
 const contact = { name: "Test Buyer", whatsapp: "081234567890" };
@@ -79,7 +91,7 @@ test("an expired hold releases stock and the slot", async () => {
   const res = await createOrder({ items: [{ productId: "hazelnut", qty: 1 }], pickupDate: date, slotIndex: 3, ...contact });
   assert.ok(res.order);
   // Force the hold into the past, then read availability which runs expireHolds.
-  (await getOrder(res.order.id)).holdExpiresAt = Date.now() - 1;
+  await _testExpireHoldNow(res.order.id);
   const after = (await getAvailability(date)).stock.hazelnut;
   assert.equal(after, free, "the released unit is back on the shelf");
 });
@@ -101,7 +113,7 @@ test("allocation cannot drop below what is already committed", async () => {
 });
 
 test("a retail subscription reserves units from the retail pool", async () => {
-  const date = (await getAvailability()).dates[0];
+  const date = await openDate();
   const weekday = new Date(date + "T00:00:00Z").getUTCDay();
   const c = await upsertCustomer("628999000111", { name: "Subscriber" });
   await setAllocation(date, "bonbon", 20, "retail");
@@ -116,7 +128,7 @@ test("a retail subscription reserves units from the retail pool", async () => {
 });
 
 test("editing a subscription's quantity re-checks capacity and updates the reservation", async () => {
-  const date = (await getAvailability()).dates[0];
+  const date = await openDate();
   const weekday = new Date(date + "T00:00:00Z").getUTCDay();
   const c = await upsertCustomer("628999000222", { name: "Subscriber2" });
   await setAllocation(date, "hazelnut", 10, "retail");
@@ -142,7 +154,7 @@ test("editing a subscription's quantity re-checks capacity and updates the reser
 });
 
 test("deleting a subscription frees its reservation for good", async () => {
-  const date = (await getAvailability()).dates[0];
+  const date = await openDate();
   const weekday = new Date(date + "T00:00:00Z").getUTCDay();
   const c = await upsertCustomer("628999000333", { name: "Subscriber3" });
   await setAllocation(date, "eggtart", 10, "retail");

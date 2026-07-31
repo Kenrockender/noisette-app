@@ -19,6 +19,14 @@ const CAKE_PILL = {
   declined: "pill-out",
 };
 
+/** Hampers has no formal pipeline like commissions, just two flags staff flip
+ * from the counter — this reads them into the same three-stage shape. */
+function hamperStage(h) {
+  if (h.sent) return { label: "Terkirim", pill: "pill-collected" };
+  if (h.paid) return { label: "Lunas, disiapkan", pill: "pill-ready" };
+  return { label: "Diterima, menunggu konfirmasi", pill: "pill-preparing" };
+}
+
 const ORDER_LABEL = {
   paid: "dibayar",
   preparing: "disiapkan",
@@ -51,6 +59,7 @@ export default function AccountSheet({ customer, onClose, onSignedIn, onSignedOu
   const [subs, setSubs] = useState(null); // weekly subscriptions
   const [cakes, setCakes] = useState(null); // bespoke commissions, this number's
   const [cakeErr, setCakeErr] = useState("");
+  const [hampers, setHampers] = useState(null); // hampers requests, this number's
   const [cancelling, setCancelling] = useState(null); // order id pending confirm
   const [cancelErr, setCancelErr] = useState("");
   const [editingSub, setEditingSub] = useState(null); // subscription id being edited
@@ -81,6 +90,11 @@ export default function AccountSheet({ customer, onClose, onSignedIn, onSignedOu
       .then((r) => (r.ok ? r.json() : { commissions: [] }))
       .then((d) => setCakes(d.commissions));
 
+  const loadHampers = () =>
+    fetch("/api/hampers?mine=1")
+      .then((r) => (r.ok ? r.json() : { orders: [] }))
+      .then((d) => setHampers(d.orders));
+
   const payDeposit = async (id) => {
     setCakeErr(""); setBusy(true);
     try {
@@ -101,11 +115,12 @@ export default function AccountSheet({ customer, onClose, onSignedIn, onSignedOu
       .then((d) => setOrders(d.orders));
 
   useEffect(() => {
-    if (!customer) { setOrders(null); setMine(null); setSubs(null); setCakes(null); return; }
+    if (!customer) { setOrders(null); setMine(null); setSubs(null); setCakes(null); setHampers(null); return; }
     loadOrders();
     loadMine();
     loadSubs();
     loadCakes();
+    loadHampers();
   }, [customer]);
 
   const cancelOrder = async (id) => {
@@ -408,6 +423,31 @@ export default function AccountSheet({ customer, onClose, onSignedIn, onSignedOu
                       </div>
                     </li>
                   ))}
+                </ul>
+              </>
+            )}
+
+            {hampers?.length > 0 && (
+              <>
+                <h3 className="acct-h3">Hampers-mu</h3>
+                <ul className="acct-cakes">
+                  {hampers.map((h) => {
+                    const stage = hamperStage(h);
+                    return (
+                      <li key={h.id} className="acct-cake">
+                        <div className="acct-cake-top">
+                          <span className="acct-cake-date">Dibutuhkan {dayLabel(h.neededOn)}</span>
+                          <span className={`pill ${stage.pill}`}>{stage.label}</span>
+                        </div>
+                        <p className="acct-cake-brief">
+                          {h.contents}{h.qty > 1 ? ` × ${h.qty}` : ""}
+                        </p>
+                        <div className="acct-order-foot">
+                          <span>{h.id}</span>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               </>
             )}

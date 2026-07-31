@@ -51,6 +51,15 @@ npm install          # pulls pg and @upstash/redis (added to package.json)
 npm run dev
 ```
 
+### Verifying the Postgres adapter without provisioning anything
+
+`npm run test:pg` runs the full `node --test` suite against a real Postgres
+(PGlite, an in-process WASM build of the actual server) instead of Supabase or
+Neon, so you can confirm `lib/store/pg.js` and its siblings actually work
+before spending a provisioning step on it. It is not a substitute for testing
+against the real thing once `DATABASE_URL` is set — see `scripts/verify-pg.mjs`
+for what it does and does not cover.
+
 ## ID scheme
 
 The Phase 1 code uses human-readable string ids (`C-0001`, `S-001`, `N-0342`).

@@ -22,10 +22,13 @@ export const metadata = {
  * It deliberately has no bag and no checkout. It shows Noisette's real whole
  * cake menu (lib/site-cakes.js, sourced from the shop's own pricelist and
  * Instagram), decoupled on purpose from the fictional demo catalog that
- * /order, /admin and /wholesale still run on — those are a separate,
- * unfinished product and their per-day allocation model does not fit a
- * made-to-order whole cake business anyway. Every CTA here goes to WhatsApp,
- * which is how the shop actually takes orders today.
+ * /pre-order, /order (the counter's walk-in menu), /admin and /wholesale still
+ * run on. That catalog is the intended path to a real retail ordering flow —
+ * not abandoned — but it isn't linked from here yet: the products are still
+ * placeholder data and the payment seam is still a simulation. See "Where
+ * /pre-order fits" in the README. Its per-day allocation model also does not
+ * fit a made-to-order whole cake business anyway. Every CTA here goes to
+ * WhatsApp, which is how the shop actually takes orders today.
  */
 const WHATSAPP_NUMBER = "6281250571356";
 const waLink = (text) =>
