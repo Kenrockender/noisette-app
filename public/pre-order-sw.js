@@ -1,11 +1,12 @@
-// Scope is set to /order via the Service-Worker-Allowed header (see next.config.mjs),
-// even though this file is served from the root. Keep it minimal: cache the app shell
-// so the order screen still opens on a flaky connection. Stock and pricing are live
-// data (the page is force-dynamic), so this never caches API calls or anything
-// other than GET navigations — a stale cache fallback only ever appears when the
-// network request has already failed.
-const SHELL_CACHE = "noisette-order-shell-v1";
-const SHELL_URLS = ["/order", "/order/manifest.webmanifest"];
+// Scope is set to /pre-order via the Service-Worker-Allowed header (see
+// next.config.mjs), even though this file is served from the root. Keep it
+// minimal: cache the app shell so the pre-order screen still opens on a
+// flaky connection. Stock and pricing are live data (the page is
+// force-dynamic), so this never caches API calls or anything other than GET
+// navigations — a stale cache fallback only ever appears when the network
+// request has already failed.
+const SHELL_CACHE = "noisette-preorder-shell-v1";
+const SHELL_URLS = ["/pre-order", "/pre-order/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -27,7 +28,7 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
-  if (!url.pathname.startsWith("/order")) return;
+  if (!url.pathname.startsWith("/pre-order")) return;
 
   // Network-first so a customer with a connection always sees live stock; the
   // cached shell only kicks in once the network request has already failed.
@@ -39,7 +40,7 @@ self.addEventListener("fetch", (event) => {
           caches.open(SHELL_CACHE).then((cache) => cache.put(request, copy));
           return response;
         })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match("/order")))
+        .catch(() => caches.match(request).then((cached) => cached || caches.match("/pre-order")))
     );
   }
 });

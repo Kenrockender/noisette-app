@@ -1,10 +1,10 @@
 "use client";
 import { useEffect } from "react";
 
-export default function RegisterOrderSW() {
+export default function RegisterPreOrderSW() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
-    navigator.serviceWorker.register("/order-sw.js", { scope: "/order" }).catch(() => {
+    navigator.serviceWorker.register("/pre-order-sw.js", { scope: "/pre-order" }).catch(() => {
       // Ordering still works without it, just without the offline shell.
     });
   }, []);

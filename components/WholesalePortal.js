@@ -680,7 +680,7 @@ export default function WholesalePortal() {
           <span className="ws-tagname">Wholesale</span>
         </div>
         <div className="app-bar-actions">
-          <Link href="/order" className="linkbtn">Pesan retail</Link>
+          <Link href="/pre-order" className="linkbtn">Pesan retail</Link>
           <ThemeToggle />
           {(me?.state === "retail" || me?.state === "wholesale") && (
             <button type="button" className="btn btn-sm ghost" onClick={signOut}>Keluar</button>

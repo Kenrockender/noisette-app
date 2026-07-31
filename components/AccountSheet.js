@@ -536,7 +536,7 @@ export default function AccountSheet({ customer, onClose, onSignedIn, onSignedOu
             )}
 
             <button type="button" className="btn ghost" onClick={signOut}>Keluar</button>
-            <Link href="/order/install" className="linkbtn acct-install-link">
+            <Link href="/pre-order/install" className="linkbtn acct-install-link">
               Pasang aplikasi order ke layar utama
             </Link>
           </>

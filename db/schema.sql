@@ -135,8 +135,12 @@ CREATE TABLE orders (
   hold_expires_at  TIMESTAMPTZ,                   -- 15-minute payment window
   paid_at          TIMESTAMPTZ,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
-  -- Retail collects in a slot. Wholesale is delivered and has none.
-  CHECK (channel = 'wholesale' OR slot_id IS NOT NULL)
+  -- A counter sale rung up on the spot: paid and handed over in the same
+  -- motion, so it skips the slot and the awaiting_payment/hold dance entirely.
+  is_walkin        BOOLEAN NOT NULL DEFAULT FALSE,
+  -- Retail collects in a slot, unless it was a walk-in. Wholesale is delivered
+  -- and has none.
+  CHECK (channel = 'wholesale' OR slot_id IS NOT NULL OR is_walkin)
 );
 CREATE INDEX idx_orders_pickup ON orders (pickup_date, status);
 CREATE INDEX idx_orders_customer ON orders (customer_id, created_at DESC);

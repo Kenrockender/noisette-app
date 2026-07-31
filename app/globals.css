@@ -2267,29 +2267,108 @@ a {
 }
 .date-jump {
   position: relative;
+  margin: -10px;
+}
+.date-jump-trigger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: var(--tap);
   height: var(--tap);
-  margin: -10px;
   color: var(--espresso2);
+  border-radius: var(--r-sm);
+  transition: background 0.15s ease-out;
 }
-.date-jump input {
+.date-jump-trigger:hover {
+  background: var(--cream2);
+}
+.date-jump-pop {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  width: 264px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: 0 14px 34px var(--shadow);
 }
-/* Phone: the trading-day rail only needs the next few days at a glance —
-   the date-jump calendar reaches anything further, so the rest of the
-   28-day horizon stays out of the scroll. */
-@media (max-width: 699px) {
-  .daterail li:nth-child(n + 6) {
-    display: none;
-  }
+.date-jump-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.date-jump-month {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--espresso);
+}
+.date-jump-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  color: var(--espresso2);
+  border-radius: var(--r-sm);
+  transition: background 0.15s ease-out;
+}
+.date-jump-nav:hover:not(:disabled) {
+  background: var(--cream2);
+}
+.date-jump-nav:disabled {
+  opacity: 0.3;
+}
+.date-jump-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 2px;
+}
+.date-jump-weekdays span {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--faint);
+  text-align: center;
+}
+.date-jump-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.date-jump-day,
+.date-jump-empty {
+  aspect-ratio: 1;
+}
+.date-jump-day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--espresso);
+  border-radius: var(--r-sm);
+  transition: background 0.15s ease-out, color 0.15s ease-out;
+}
+.date-jump-day:hover:not(:disabled) {
+  background: var(--cream2);
+}
+.date-jump-day:disabled {
+  color: var(--faint);
+  opacity: 0.4;
+}
+.date-jump-day.on {
+  background: var(--espresso);
+  color: var(--cream);
+}
+/* The trading-day rail only needs a week at a glance — the date-jump
+   calendar reaches anything further, so the rest of the 28-day horizon
+   stays out of the scroll, on phone and desktop alike. */
+.daterail li:nth-child(n + 8) {
+  display: none;
 }
 
 .admin-main {
@@ -2431,6 +2510,108 @@ a {
   font-size: 14px;
 }
 
+/* ---- shared between the /admin ticket board and the /order menu ---- */
+.walkin-rows {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 14px;
+}
+.walkin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.walkin-row:last-child {
+  border-bottom: none;
+}
+.walkin-row.row-out {
+  opacity: 0.45;
+}
+.walkin-row-name {
+  font-size: 15px;
+  color: var(--espresso);
+}
+.walkin-row-name small {
+  display: block;
+  font-size: 12px;
+  color: var(--faint);
+}
+.walkin-stepper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+.walkin-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  color: var(--espresso);
+  background: var(--cream2);
+  border-radius: var(--r-sm);
+  transition: background 0.15s ease-out;
+}
+.walkin-step:hover:not(:disabled) {
+  background: var(--line);
+}
+.walkin-step:disabled {
+  opacity: 0.35;
+}
+.walkin-qty {
+  min-width: 20px;
+  text-align: center;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  color: var(--espresso);
+}
+
+/* ---- /order, the walk-in menu ---- */
+.walkin-menu-main {
+  padding-bottom: 100px; /* clears the sticky cart bar */
+}
+.walkin-house {
+  margin-bottom: 22px;
+}
+.walkin-ok {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  background: var(--ok-bg);
+  color: var(--ok);
+  border-radius: var(--r-md);
+  font-size: 14px;
+}
+.walkin-cartbar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  padding-bottom: max(14px, env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -8px 26px var(--shadow);
+}
+.walkin-cartbar-count {
+  font-size: 13px;
+  color: var(--faint);
+}
+.walkin-cartbar-total {
+  flex: 1;
+  font-size: 19px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--espresso);
+}
+
 /* ---- fulfillment tickets ---- */
 .tickets {
   display: grid;
@@ -2553,6 +2734,9 @@ a {
   margin-top: auto;
   color: var(--ok);
   font-size: 13.5px;
+}
+.ticket-done.ticket-void {
+  color: var(--faint);
 }
 .ticket-btnrow {
   display: flex;

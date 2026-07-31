@@ -41,9 +41,9 @@ const nextConfig = {
         ],
       },
       {
-        source: "/order-sw.js",
+        source: "/pre-order-sw.js",
         headers: [
-          { key: "Service-Worker-Allowed", value: "/order" },
+          { key: "Service-Worker-Allowed", value: "/pre-order" },
           { key: "Cache-Control", value: "no-cache" },
         ],
       },
@@ -52,8 +52,9 @@ const nextConfig = {
   async redirects() {
     return [
       // /vitrine used to be the ordering screen. La Vitrine is now a section of
-      // the website, and ordering lives at /order.
-      { source: "/vitrine", destination: "/order", permanent: true },
+      // the website, and pre-ordering lives at /pre-order. /order is the
+      // counter's walk-in menu, a separate tool for staff.
+      { source: "/vitrine", destination: "/pre-order", permanent: true },
     ];
   },
 };

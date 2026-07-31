@@ -3,6 +3,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Icon from "./Icon";
 import ThemeToggle from "./ThemeToggle";
+import DateJump from "./DateJump";
 import { rp, dayLabel, dayShort } from "@/lib/format";
 
 /*
@@ -51,7 +52,7 @@ const REV_STATUSES = [
   { id: "rejected", label: "Ditolak" },
 ];
 
-const STAGE_LABEL = { paid: "Dibayar", preparing: "Disiapkan", ready: "Siap", collected: "Diambil" };
+const STAGE_LABEL = { paid: "Dibayar", preparing: "Disiapkan", ready: "Siap", collected: "Diambil", cancelled: "Dibatalkan" };
 const NEXT_LABEL = { paid: "Mulai siapkan", preparing: "Tandai siap", ready: "Serahkan" };
 
 /** "08:00-10:00" from the API becomes "08.00–10.00" on screen. */
@@ -792,7 +793,124 @@ export default function AdminDash() {
     }
   };
 
+  // Shared between the slot groups and the counter-sale section below, since
+  // a walk-in ticket is rendered exactly like a slotted one once it exists.
+  const renderTicket = (o) => (
+    <li key={o.id} className={`ticket stage-${o.status}`}>
+      <div className="ticket-head">
+        <p className="ticket-who">
+          {o.customer.name}
+          {o.customer.whatsapp && <small>{o.customer.whatsapp}</small>}
+        </p>
+        <span className={`pill pill-${o.status}`}>{STAGE_LABEL[o.status]}</span>
+      </div>
+      <ul className="ticket-items">
+        {o.items.map((it) => (
+          <li key={it.productId}>
+            <b>{it.qty}</b> {it.name}
+          </li>
+        ))}
+        {o.giftWrap && <li className="ticket-wrap">Bungkus kado</li>}
+      </ul>
+      <div className="ticket-foot">
+        <span className="ticket-no">{o.id}</span>
+        <span className="ticket-total">{rp(o.total)}</span>
+      </div>
+      {NEXT_LABEL[o.status] ? (
+        cancellingOrder === o.id ? (
+          <div className="ticket-cancel-confirm">
+            <p className="micro">Batalkan dan refund {o.id}?</p>
+            <div className="approw-btns">
+              <button type="button" className="btn btn-sm ghost" onClick={() => setCancellingOrder(null)}>
+                Biarkan
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm"
+                disabled={busy}
+                onClick={async () => {
+                  if (await mutate(`/api/admin/orders/${o.id}`, {}, "DELETE")) setCancellingOrder(null);
+                }}
+              >
+                Batalkan & refund
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="ticket-btnrow">
+            <button
+              type="button"
+              className={`btn ticket-go ${o.status === "ready" ? "ticket-go-ready" : ""}`}
+              disabled={busy}
+              onClick={() => mutate(`/api/admin/orders/${o.id}`, {})}
+            >
+              {NEXT_LABEL[o.status]}
+            </button>
+            <button
+              type="button"
+              className="linkbtn ticket-cancel-link"
+              disabled={busy}
+              onClick={() => setCancellingOrder(o.id)}
+            >
+              Batalkan & refund
+            </button>
+          </div>
+        )
+      ) : o.isWalkin && o.status === "collected" ? (
+        // A walk-in is rung up already "collected" — there's no next stage to
+        // advance to, but a mistapped sale still needs a way back out, same
+        // trading day only. Cash, so this voids the sale rather than refunding
+        // an invoice that was never created.
+        cancellingOrder === o.id ? (
+          <div className="ticket-cancel-confirm">
+            <p className="micro">Batalkan penjualan {o.id}? Stoknya dikembalikan.</p>
+            <div className="approw-btns">
+              <button type="button" className="btn btn-sm ghost" onClick={() => setCancellingOrder(null)}>
+                Biarkan
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm"
+                disabled={busy}
+                onClick={async () => {
+                  if (await mutate(`/api/admin/orders/${o.id}`, {}, "DELETE")) setCancellingOrder(null);
+                }}
+              >
+                Batalkan penjualan
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="ticket-btnrow">
+            <button
+              type="button"
+              className="linkbtn ticket-cancel-link"
+              disabled={busy}
+              onClick={() => setCancellingOrder(o.id)}
+            >
+              Batalkan penjualan (salah tap)
+            </button>
+          </div>
+        )
+      ) : o.status === "cancelled" ? (
+        <p className="ticket-done ticket-void">
+          <Icon name="close" size={15} />
+          Dibatalkan
+        </p>
+      ) : (
+        <p className="ticket-done">
+          <Icon name="check" size={15} />
+          Sudah diambil
+        </p>
+      )}
+    </li>
+  );
+
   const t = day.totals;
+  // A walk-in has no slot, so it never belongs in the slot-time groups below —
+  // it gets its own section instead of a group with a blank heading.
+  const slottedOrders = day.orders.filter((o) => o.slotTime);
+  const walkinOrders = day.orders.filter((o) => !o.slotTime);
 
   return (
     <div className="admin">
@@ -829,16 +947,7 @@ export default function AdminDash() {
       <div className="admin-dates">
         <div className="admin-dates-head">
           <p className="micro" id="trading-day">Hari dagang</p>
-          <label className="date-jump">
-            <Icon name="calendar" size={16} />
-            <span className="sr-only">Lompat ke tanggal</span>
-            <input
-              type="date"
-              value={day.date}
-              min={day.dates[0]}
-              onChange={(e) => e.target.value && load(e.target.value)}
-            />
-          </label>
+          <DateJump value={day.date} min={day.dates[0]} onPick={(d) => load(d)} />
         </div>
         <ul className="daterail" aria-labelledby="trading-day">
           {day.dates.map((d) => (
@@ -927,90 +1036,32 @@ export default function AdminDash() {
             {day.orders.length === 0 ? (
               <p className="admin-empty">Belum ada pesanan terbayar untuk {dayLabel(day.date)}.</p>
             ) : (
-              [...new Set(day.orders.map((o) => o.slotTime))].sort().map((sl) => {
-                const inSlot = day.orders.filter((o) => o.slotTime === sl);
-                const now = slotIsNow(day.date, sl);
-                return (
-                  <section key={sl} className="slotgroup">
+              <>
+                {[...new Set(slottedOrders.map((o) => o.slotTime))].sort().map((sl) => {
+                  const inSlot = slottedOrders.filter((o) => o.slotTime === sl);
+                  const now = slotIsNow(day.date, sl);
+                  return (
+                    <section key={sl} className="slotgroup">
+                      <div className="slotgroup-head">
+                        <h2 className={`slotgroup-h ${now ? "now" : ""}`}>{slotLabel(sl)}</h2>
+                        {now && <span className="nowpill">Sedang berjalan</span>}
+                        <span className="slotgroup-count">{inSlot.length} pesanan</span>
+                      </div>
+                      <ul className="tickets">{inSlot.map(renderTicket)}</ul>
+                    </section>
+                  );
+                })}
+
+                {walkinOrders.length > 0 && (
+                  <section className="slotgroup">
                     <div className="slotgroup-head">
-                      <h2 className={`slotgroup-h ${now ? "now" : ""}`}>{slotLabel(sl)}</h2>
-                      {now && <span className="nowpill">Sedang berjalan</span>}
-                      <span className="slotgroup-count">{inSlot.length} pesanan</span>
+                      <h2 className="slotgroup-h">Penjualan langsung di toko</h2>
+                      <span className="slotgroup-count">{walkinOrders.length} pesanan</span>
                     </div>
-                    <ul className="tickets">
-                      {inSlot.map((o) => (
-                        <li key={o.id} className={`ticket stage-${o.status}`}>
-                          <div className="ticket-head">
-                            <p className="ticket-who">
-                              {o.customer.name}
-                              <small>{o.customer.whatsapp}</small>
-                            </p>
-                            <span className={`pill pill-${o.status}`}>{STAGE_LABEL[o.status]}</span>
-                          </div>
-                          <ul className="ticket-items">
-                            {o.items.map((it) => (
-                              <li key={it.productId}>
-                                <b>{it.qty}</b> {it.name}
-                              </li>
-                            ))}
-                            {o.giftWrap && <li className="ticket-wrap">Bungkus kado</li>}
-                          </ul>
-                          <div className="ticket-foot">
-                            <span className="ticket-no">{o.id}</span>
-                            <span className="ticket-total">{rp(o.total)}</span>
-                          </div>
-                          {NEXT_LABEL[o.status] ? (
-                            cancellingOrder === o.id ? (
-                              <div className="ticket-cancel-confirm">
-                                <p className="micro">Batalkan dan refund {o.id}?</p>
-                                <div className="approw-btns">
-                                  <button type="button" className="btn btn-sm ghost" onClick={() => setCancellingOrder(null)}>
-                                    Biarkan
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="btn btn-sm"
-                                    disabled={busy}
-                                    onClick={async () => {
-                                      if (await mutate(`/api/admin/orders/${o.id}`, {}, "DELETE")) setCancellingOrder(null);
-                                    }}
-                                  >
-                                    Batalkan & refund
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="ticket-btnrow">
-                                <button
-                                  type="button"
-                                  className={`btn ticket-go ${o.status === "ready" ? "ticket-go-ready" : ""}`}
-                                  disabled={busy}
-                                  onClick={() => mutate(`/api/admin/orders/${o.id}`, {})}
-                                >
-                                  {NEXT_LABEL[o.status]}
-                                </button>
-                                <button
-                                  type="button"
-                                  className="linkbtn ticket-cancel-link"
-                                  disabled={busy}
-                                  onClick={() => setCancellingOrder(o.id)}
-                                >
-                                  Batalkan & refund
-                                </button>
-                              </div>
-                            )
-                          ) : (
-                            <p className="ticket-done">
-                              <Icon name="check" size={15} />
-                              Sudah diambil
-                            </p>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
+                    <ul className="tickets">{walkinOrders.map(renderTicket)}</ul>
                   </section>
-                );
-              })
+                )}
+              </>
             )}
 
             {/* The delivery run. Same oversized buttons as the tickets, same
@@ -1072,13 +1123,6 @@ export default function AdminDash() {
 
         {tab === "stock" && (
           <section role="tabpanel" id="panel-stock" aria-labelledby="tab-stock">
-            <p className="admin-hint">
-              Dua kolam terpisah untuk {dayLabel(day.date)}. Retail tidak bisa
-              turun di bawah yang sudah terjual atau ditahan; wholesale tidak
-              bisa turun di bawah yang sudah dijanjikan pesanan tetap. Keduanya
-              tidak bisa saling pinjam. Panggang = jumlah keduanya — satu-satunya
-              angka yang dapur butuhkan.
-            </p>
             <div className="tablewrap">
               <table className="dtable">
                 <caption className="visually-hidden">
@@ -1200,10 +1244,6 @@ export default function AdminDash() {
 
         {tab === "slots" && (
           <section role="tabpanel" id="panel-slots" aria-labelledby="tab-slots">
-            <p className="admin-hint">
-              Kapasitas = berapa pesanan yang bisa diterima tiap jendela.
-              Menurunkannya di bawah yang sudah terisi akan ditolak sistem.
-            </p>
             <ul className="slotrows">
               {day.slots.map((s) => {
                 const full = s.bookedCount >= s.maxCapacity;
@@ -1241,12 +1281,6 @@ export default function AdminDash() {
         )}
         {tab === "wholesale" && (
           <section role="tabpanel" id="panel-wholesale" aria-labelledby="tab-wholesale">
-            <p className="admin-hint">
-              Menyetujui aplikasi mengaktifkan harga trade dan kolam wholesale.
-              Tidak ada yang bisa masuk sendiri. Penolakan hanya final sampai
-              mereka mendaftar lagi.
-            </p>
-
             <h3 className="admin-h3">Aplikasi</h3>
             {ws === null && <p className="admin-empty">Memuat</p>}
             {ws?.applications.length === 0 && <p className="admin-empty">Tidak ada yang menunggu ditinjau.</p>}
@@ -1312,11 +1346,6 @@ export default function AdminDash() {
 
         {tab === "reviews" && (
           <section role="tabpanel" id="panel-reviews" aria-labelledby="tab-reviews">
-            <p className="admin-hint">
-              Setiap ulasan datang dari pesanan yang sudah diambil, dan tidak
-              ada yang tayang di menu sebelum dibaca di sini. Tayangkan atau
-              tolak; kata-kata pelanggan tidak bisa diedit.
-            </p>
             <div className="tabs tabs-sm" role="tablist" aria-label="Review status">
               {REV_STATUSES.map((x) => (
                 <button
@@ -1378,13 +1407,6 @@ export default function AdminDash() {
 
         {tab === "bespoke" && (
           <section role="tabpanel" id="panel-bespoke" aria-labelledby="tab-bespoke">
-            <p className="admin-hint">
-              Bespoke hidup di luar stok harian. Kapasitas = kue per minggu,
-              dan slot minggu baru terpakai saat DP masuk: tawar sebanyak
-              apa pun enquiry, tombol DP satu-satunya yang bisa menolak.
-              Lead time dua minggu ditegakkan di formulir.
-            </p>
-
             <h3 className="admin-h3">Minggu-minggu ke depan</h3>
             <ul className="weekcaps">
               {(bk?.weeks ?? []).map((w) => (
@@ -1544,14 +1566,6 @@ export default function AdminDash() {
 
         {tab === "outbox" && (
           <section role="tabpanel" id="panel-outbox" aria-labelledby="tab-outbox">
-            <p className="admin-hint">
-              WhatsApp keluar. Pesan diantrekan oleh peristiwa yang terjadi dan
-              dikirim oleh worker, tidak pernah inline, jadi gangguan WhatsApp
-              tidak bisa menggagalkan pesanan yang uangnya sudah masuk. Membuka
-              tab ini menjalankan worker sekali. Di produksi, pengiriman gagal
-              tertutup sampai WhatsApp Business API dikonfigurasi, dan semuanya
-              menunggu di sini.
-            </p>
             {ob === null && <p className="admin-empty">Memuat</p>}
             {ob && (
               <>
